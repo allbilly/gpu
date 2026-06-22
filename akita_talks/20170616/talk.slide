@@ -1,0 +1,321 @@
+GCN3Sim
+A Parallel Simulator for AMD Volcanic-Islands GPUs
+
+Yifan Sun
+NUCAR
+yifansun@coe.neu.edu
+
+* Motivation
+
+* Computer Architecture Simulator
+- Proof of Concept without building real devices
+
+* State of the Art
+
+Mainstream GPU Simulator:
+
+- GPGPUSim / GEM5-GPU: Fermi (2010)
+- Multi2Sim: Southern-Islands (2011)
+- Multi2Sim: Kepler (2012)
+
+Newer GPU features are required
+
+- Multi-GPU simulation
+- Concurrent Kernel
+- ...
+
+* Simulation Parallalization
+
+
+Good and bad
+
+- Fast?
+- Error prone
+
+Example
+
+- Graphite
+
+Compute Architecture Simulator is suitable for parallalization by its nature.
+.image clockpulse.gif
+
+* Some Background
+
+* Simulators
+
+Tick Based
+
+- GPGPUSim
+- VistaLights
+
+Event Driven
+
+- GEM5
+- ...
+
+Hybrid 
+
+- Multi2Sim
+
+* Tick Based Simulation
+
+Good
+
+- Simple
+- Easy Parallalization
+
+Bad
+
+- Limited Resolution
+- Multiple Frequency
+- Performance 
+
+In Compute Architecture Simulator
+
+- Good for pipeline
+- Bad for network and memory
+
+* Event Driven
+
+Good 
+
+- Performance
+- Unlimited Resolution (in theory)
+
+Bad
+
+- Slightly more complex
+- Not easy for parallalization
+
+In Compute Architecture Simulator
+
+- Good for network and memory
+- Bad for pipeline
+
+* Parallel Discrete Event Simulator
+
+Challenge: Dependency and Causal Relationships
+
+.image pdes.png _ 1000 
+
+Two Approaches
+
+- Conservative
+- Optimistic
+
+* Simulation Parallalization
+.image num_events.png _ 1000
+
+* Philosophy
+
+* Philosophy
+
+- Modular, Pluggable, Hookable, Composable
+- Less is more (Core should be very simple)
+- Everyone should be able to start to create in 20 minites
+- Do not modify my code, extend it
+- Code is better than DSL
+
+* Programming Language: Go
+
+Least worst programming language
+
+Like improved C/C++
+
+Reasonable performance, reasonable developing defficulty
+
+- Compiled language
+- Garbage collected
+- Very simple gramma
+
+Superium library and tool support
+
+- go fmt & go vet
+- go race detector
+- go profiling tool and go trace
+
+
+* Code organization
+
+.link https://gitlab.com/yaotsu The Code Base
+
+.image organization.png _ 800
+
+The name Yaotsu
+ 
+- Just a codename of the bigger project
+
+* How to Use
+
+Play with the Toy
+
+- Write a very simple Go main program anywhere you want
+
+Play with the Toy Seriously
+
+- Create a git repo
+- Write a main program with some configuration
+- Open source it
+
+* How to use
+
+To Publish a Paper
+
+- Create a git repo
+- Write a few components 
+- Write a main program
+- Open source it so that others can repeat 
+
+To be a Developer
+
+- Create a git repo
+- Create an extension
+- Publish it as a library
+
+* The Simulator Core
+
+* Design Decisions
+
+Pure Event Driven
+
+- Good Performance
+- Unified Interface
+
+Conservative Parallalization
+
+- No complex back-rolling
+- No trade-off in accuracy
+- Computer architecture simulation has enough opportunities for parallism
+
+
+* Event System
+
+Event
+
+- Time()
+- Handler()
+
+Engine 
+
+- Schedule(evt Event)
+- Run() 
+
+Time Based Engine
+
+- No frequency domain required
+- Annoying floating pointer accuracy problem
+
+* Serial Engine and Parallel Engine
+
+Serial Engine
+
+- Global Event Queue (Heap)
+- Trigger events one by one
+
+Parallel Engine
+
+- Global Event Queue (Heap) + Optimization
+- Trigger in rounds
+
+* Example
+.play _serial_engine/main.go /START OMIT/,/END OMIT/
+
+* Example
+.play _parallel_engine/main.go /START OMIT/,/END OMIT/
+
+
+
+* Components
+
+Everything that is being simulated is a Component. 
+
+- e.g. GPU, Compute Unit, SIMD Unit, L1 Cache Unit
+- Can be nested
+- Granularity is flexible
+
+Components knows what it needs to do in the future. 
+
+- Event is only scheduled by a component to itself 
+- (the handler must be the itself)
+
+Only two interfaces (So always start reading from there)
+
+- Recv(req Request)
+- Handle(evt Event)
+
+* Requests
+
+The only communication channel across components
+
+Guarantee Flexibility
+.code _scheduler/scheduler.go /^type Scheduler/,/^}
+
+
+* Connections and Ports
+
+The communication media between components
+.image conn.svg _ 800
+
+Three types of connections
+
+- DirectConnection (pipeline stages)
+- FixedLatencyConnection (cache system)
+- NetworkedConnection (PCIe bus)
+
+Example
+.code _conn_example/conn_example.go /START OMIT/,/END OMIT/
+
+
+* Hooks
+
+Why
+- Debug code interrupts real logic
+- Tracing/logging not flexible (large file, fixed trace format, only one trace file)
+- Sometimes we need to extract information from the simulator
+- Sometimes we need to manipulate simulator
+
+How 
+- All components are hookable
+- Hooks are triggered by some event or request types
+
+* Hooks
+
+Hook define 3 functions
+- Type(): trigger type
+- Pos():  before event or after event  
+- Func(): the behavior
+
+* Example
+.code _hook_example/hook.go
+.code _hook_example/apply.go
+
+    0.0000000010 MapWG 0 ok: true, CU: 0
+         wf SIMD 0, SGPR offset 0, VGPR offset 0, LDS offset 0
+         wf SIMD 1, SGPR offset 128, VGPR offset 0, LDS offset 0
+         wf SIMD 2, SGPR offset 256, VGPR offset 0, LDS offset 0
+         wf SIMD 3, SGPR offset 384, VGPR offset 0, LDS offset 0
+
+
+* GPU simulation
+
+* Methodology
+.image hsa.svg 500 _
+
+* GPU Architecture
+.image gpu_arch.png 500 _
+
+* Inside a Compute Unit
+.image cu.svg _ 900
+
+* Pipeline Visualization
+.image vis.png
+
+* Future Work
+
+- Emulator
+- Cache System
+- HSA Runtime
+- Improved Visualization
+- Verification
+- Performance Optimization
+

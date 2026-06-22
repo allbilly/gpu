@@ -1,0 +1,32 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, macos-14]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check format
+      run: cargo fmt
+
+    - name: Run unit tests
+      run: cargo test
+
+    - name: Build release binary
+      run: cargo build --release
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.os == 'macos-14' && 'libremu.dylib' || 'libremu.so' }}
+        path: ${{ env.REMU_LOC }}/target/release/${{ matrix.os == 'macos-14' && 'libremu.dylib' || 'libremu.so' }}

@@ -1,0 +1,62 @@
+---
+tasks: false
+---
+
+- [x] Why accel-sim and why it's important in current scenerio of GPU_developement? ✅ 2025-12-26
+	- [x] Who are the active developers or moderators and their background? ✅ 2025-12-26
+	- [x] Where was accel-sim developed and what's the current status of it? ✅ 2025-12-26
+- [x] Walk-through of all the 2stages. ✅ 2026-01-23
+- [x] Stage 1: ✅ 2025-12-27
+	- [x] Tracer ✅ 2025-12-27
+		- [x] why the traces are important ✅ 2025-12-27
+		- [x] where are the trace files being generated ✅ 2025-12-27
+		- [x] what does the traces contain ✅ 2025-12-27
+		- [x] how does the traces look and what does it mean ✅ 2025-12-27
+		- [x] what's being used for generating traces and how's it being done ✅ 2025-12-27
+- [x] Stage 2: ✅ 2026-01-23
+	- [x] Simulation ✅ 2025-12-27
+		- [x] Why it's done? ✅ 2025-12-27
+		- [x] How's it being done? ✅ 2025-12-27
+			- [x] What are the two methods ✅ 2025-12-27
+			- [x] What all parameters can the `run_simulations.py` can take in? ✅ 2025-12-27
+		- [x] How's GPGPU-Sim being used in this? ✅ 2025-12-27
+		- [x] Outputs ✅ 2025-12-27
+			- [x] Where the outputs are being saved? ✅ 2025-12-27
+			- [x] How it looks? ✅ 2025-12-27
+			- [x] What it contains? ✅ 2025-12-27
+				- [x] Go through gpgpusim output files ✅ 2026-01-23
+			- [x] How it will be used? ✅ 2025-12-27
+		- [x] Monitoring ✅ 2025-12-27
+			- [x] How's it done? ✅ 2025-12-27
+			- [x] What all parameters the `monitor_func_test.py` can take? ✅ 2025-12-27
+		- [x] Stats collection ✅ 2025-12-27
+			- [x] How't it done? ✅ 2025-12-27
+			- [x] What's the format in which it's stored? ✅ 2025-12-27
+- [x] Stage 3: ✅ 2025-12-27
+	- [x] Correlation ✅ 2025-12-27
+		- [x] How does `run_hw.py` work? ✅ 2025-12-27
+			- [x] Input, Output ✅ 2025-12-27
+			- [x] Parameters cant take. ✅ 2025-12-27
+		- [x] What `get_stats.py` does? ✅ 2025-12-27
+			- [x] Parameters ✅ 2025-12-27
+			- [x] Output Values ✅ 2025-12-27
+			- [x] Input, Output ✅ 2025-12-27
+	- [x] Hardware stats ✅ 2025-12-27
+		- [x] How's it done? ✅ 2025-12-27
+		- [x] What does it output? (format) ✅ 2025-12-27
+		- [x] What's the requirement? ✅ 2025-12-27
+		- [x] Why it should be done? ✅ 2025-12-27
+- [x] Stage 4: ✅ 2025-12-27
+	- [x] Tuning ✅ 2025-12-27
+		- [x] Process ✅ 2025-12-27
+		- [x] Why it's done? ✅ 2025-12-27
+		- [x] My Current Status ✅ 2025-12-27
+		- [x] What to expect and what not to? ✅ 2025-12-27
+		- [x] What all things are under tuning? ✅ 2025-12-27
+- [x] How's gpgpu-sim is being used? ✅ 2025-12-27
+ - [x] Read accel-sim whitepaper ✅ 2025-12-27
+- [x] Read gpgpu-sim manual ✅ 2025-12-27
+- [x] Understand all the stuff and then start making the ppt. ✅ 2026-01-23
+- [x] It's done. ✅ 2026-01-23
+
+[[GPGPU-SIM Manual Notes]]

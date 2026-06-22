@@ -1,0 +1,17 @@
+const char *kernels_ocl =
+"__kernel void microbench(__global ulong *memory, __global ulong* offset, int count){\n"
+"    int global_id = get_global_id(0);\n"
+"\n"
+"    __global ulong *p = memory;\n"
+"    p += offset[global_id];\n"
+"\n"
+"    ulong q;\n"
+"    //printf(\"%p \",memory);\n"
+"    for(int i=0; i<count; i++){\n"
+"        //printf(\"%p \",p); \n"
+"        q = (ulong)memory + *p; \n"
+"        p = (__global ulong*)q;\n"
+"    }\n"
+"    *p=1;\n"
+"}\n"
+;

@@ -1,0 +1,629 @@
+package rdnaemu
+
+import (
+	"bytes"
+	"encoding/binary"
+	"log"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"gitlab.com/akita/navisim/rdnainsts"
+)
+
+var _ = Describe("ScratchpadPreparer", func() {
+	var (
+		sp *ScratchpadPreparerImpl
+		wf *Wavefront
+	)
+
+	BeforeEach(func() {
+		sp = NewScratchpadPreparerImpl()
+		wf = NewWavefront(nil)
+	})
+
+	It("should prepare for SOP1", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.SOP1
+		inst.Src0 = rdnainsts.NewSRegOperand(0, 0, 1)
+		wf.inst = inst
+
+		wf.WriteReg(rdnainsts.SReg(0), 1, 0, rdnainsts.Uint32ToBytes(517))
+		wf.SCC = 1
+		wf.Exec = 0xffffffff00000000
+		wf.PC = 10
+
+		sp.Prepare(wf, wf)
+
+		sp := wf.Scratchpad().AsSOP1()
+		Expect(sp.SRC0).To(Equal(uint64(517)))
+		Expect(sp.EXEC).To(Equal(uint64(0xffffffff00000000)))
+		Expect(sp.SCC).To(Equal(byte(1)))
+		Expect(sp.PC).To(Equal(uint64(10)))
+	})
+
+	It("should prepare for SOP2", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.SOP2
+		inst.Src0 = rdnainsts.NewSRegOperand(0, 0, 1)
+		inst.Src1 = rdnainsts.NewIntOperand(1, 1)
+		wf.inst = inst
+
+		wf.WriteReg(rdnainsts.SReg(0), 1, 0, rdnainsts.Uint32ToBytes(517))
+		wf.SCC = 1
+
+		sp.Prepare(wf, wf)
+
+		layout := wf.Scratchpad().AsSOP2()
+		binary.Read(bytes.NewBuffer(wf.scratchpad), binary.LittleEndian, layout)
+		Expect(layout.SRC0).To(Equal(uint64(517)))
+		Expect(layout.SRC1).To(Equal(uint64(1)))
+		Expect(layout.SCC).To(Equal(byte(1)))
+
+	})
+
+	It("should prepare for VOP1", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.VOP1
+		inst.Src0 = rdnainsts.NewVRegOperand(0, 0, 1)
+		wf.inst = inst
+
+		for i := 0; i < 64; i++ {
+			wf.WriteReg(rdnainsts.VReg(0), 1, i, rdnainsts.Uint32ToBytes(uint32(i)))
+		}
+		wf.WriteReg(rdnainsts.Regs[rdnainsts.VCC], 1, 0,
+			rdnainsts.Uint64ToBytes(uint64(0xffff0000ffff0000)))
+		wf.Exec = 0xff
+
+		sp.Prepare(wf, wf)
+
+		layout := wf.Scratchpad().AsVOP1()
+		for i := 0; i < 64; i++ {
+			Expect(layout.SRC0[i]).To(Equal(uint64(i)))
+		}
+		Expect(layout.VCC).To(Equal(uint64(0xffff0000ffff0000)))
+		Expect(layout.EXEC).To(Equal(uint64(0xff)))
+	})
+
+	It("should prepare for VOP2", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.VOP2
+		inst.Src0 = rdnainsts.NewVRegOperand(0, 0, 2)
+		inst.Src1 = rdnainsts.NewVRegOperand(2, 2, 2)
+		inst.Dst = rdnainsts.NewVRegOperand(6, 6, 2)
+		wf.inst = inst
+
+		for i := 0; i < 64; i++ {
+			wf.WriteReg(rdnainsts.VReg(0), 2, i, rdnainsts.Uint64ToBytes(uint64(i)))
+			wf.WriteReg(rdnainsts.VReg(2), 2, i, rdnainsts.Uint64ToBytes(uint64(i+1)))
+			wf.WriteReg(rdnainsts.VReg(6), 2, i, rdnainsts.Uint64ToBytes(uint64(i+2)))
+		}
+		wf.VCC = 0xffff0000ffff0000
+		wf.Exec = 0xff
+
+		sp.Prepare(wf, wf)
+
+		layout := wf.Scratchpad().AsVOP2()
+		for i := 0; i < 64; i++ {
+			Expect(layout.DST[i]).To(Equal(uint64(i + 2)))
+			Expect(layout.SRC0[i]).To(Equal(uint64(i)))
+			Expect(layout.SRC1[i]).To(Equal(uint64(i + 1)))
+		}
+		Expect(layout.VCC).To(Equal(uint64(0xffff0000ffff0000)))
+		Expect(layout.EXEC).To(Equal(uint64(0xff)))
+	})
+
+	It("should prepare for VOP3a", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.VOP3a
+		inst.Src0 = rdnainsts.NewVRegOperand(0, 0, 2)
+		inst.Src1 = rdnainsts.NewVRegOperand(2, 2, 2)
+		inst.Src2 = rdnainsts.NewIntOperand(1, 1)
+		wf.inst = inst
+
+		for i := 0; i < 64; i++ {
+			wf.WriteReg(rdnainsts.VReg(0), 2, i, rdnainsts.Uint64ToBytes(uint64(i)))
+			wf.WriteReg(rdnainsts.VReg(2), 2, i, rdnainsts.Uint64ToBytes(uint64(i)))
+		}
+		wf.WriteReg(rdnainsts.Regs[rdnainsts.VCC], 1, 0,
+			rdnainsts.Uint64ToBytes(uint64(0xffff0000ffff0000)))
+		wf.Exec = 0xff
+
+		sp.Prepare(wf, wf)
+
+		layout := wf.Scratchpad().AsVOP3A()
+		for i := 0; i < 64; i++ {
+			Expect(layout.SRC0[i]).To(Equal(uint64(i)))
+			Expect(layout.SRC1[i]).To(Equal(uint64(i)))
+			Expect(layout.SRC2[i]).To(Equal(uint64(1)))
+		}
+		Expect(layout.VCC).To(Equal(uint64(0xffff0000ffff0000)))
+		Expect(layout.EXEC).To(Equal(uint64(0xff)))
+	})
+
+	It("should prepare for VOP3b", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.VOP3b
+		inst.Src0 = rdnainsts.NewVRegOperand(0, 0, 2)
+		inst.Src1 = rdnainsts.NewVRegOperand(2, 2, 2)
+		inst.Src2 = rdnainsts.NewIntOperand(1, 1)
+		wf.inst = inst
+
+		for i := 0; i < 64; i++ {
+			wf.WriteReg(rdnainsts.VReg(0), 2, i, rdnainsts.Uint64ToBytes(uint64(i)))
+			wf.WriteReg(rdnainsts.VReg(2), 2, i, rdnainsts.Uint64ToBytes(uint64(i)))
+		}
+		wf.WriteReg(rdnainsts.Regs[rdnainsts.VCC], 1, 0,
+			rdnainsts.Uint64ToBytes(uint64(0xffff0000ffff0000)))
+		wf.Exec = 0xff
+
+		sp.Prepare(wf, wf)
+
+		layout := wf.Scratchpad().AsVOP3B()
+		for i := 0; i < 64; i++ {
+			Expect(layout.SRC0[i]).To(Equal(uint64(i)))
+			Expect(layout.SRC1[i]).To(Equal(uint64(i)))
+			Expect(layout.SRC2[i]).To(Equal(uint64(1)))
+		}
+		Expect(layout.VCC).To(Equal(uint64(0xffff0000ffff0000)))
+		Expect(layout.EXEC).To(Equal(uint64(0xff)))
+	})
+
+	It("should prepare for VOPC", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.VOPC
+		inst.Src0 = rdnainsts.NewVRegOperand(0, 0, 1)
+		inst.Src1 = rdnainsts.NewVRegOperand(1, 1, 1)
+		wf.inst = inst
+
+		for i := 0; i < 64; i++ {
+			wf.WriteReg(rdnainsts.VReg(0), 1, i, rdnainsts.Uint64ToBytes(uint64(i)))
+			wf.WriteReg(rdnainsts.VReg(1), 1, i, rdnainsts.Uint64ToBytes(uint64(i+1)))
+		}
+		wf.VCC = 1
+		wf.Exec = 0xff
+
+		sp.Prepare(wf, wf)
+
+		layout := wf.Scratchpad().AsVOPC()
+		Expect(layout.EXEC).To(Equal(uint64(0xff)))
+		for i := 0; i < 64; i++ {
+			Expect(layout.SRC0[i]).To(Equal(uint64(i)))
+			Expect(layout.SRC1[i]).To(Equal(uint64(i + 1)))
+		}
+	})
+
+	It("should prepare for FLAT", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.FLAT
+		inst.Addr = rdnainsts.NewVRegOperand(0, 0, 2)
+		inst.Data = rdnainsts.NewVRegOperand(2, 2, 4)
+		wf.inst = inst
+
+		for i := 0; i < 64; i++ {
+			wf.WriteReg(rdnainsts.VReg(0), 2, i,
+				rdnainsts.Uint64ToBytes(uint64(i+1024)))
+			wf.WriteReg(rdnainsts.VReg(2), 1, i, rdnainsts.Uint32ToBytes(uint32(i)))
+			wf.WriteReg(rdnainsts.VReg(3), 1, i, rdnainsts.Uint32ToBytes(uint32(i)))
+			wf.WriteReg(rdnainsts.VReg(4), 1, i, rdnainsts.Uint32ToBytes(uint32(i)))
+			wf.WriteReg(rdnainsts.VReg(5), 1, i, rdnainsts.Uint32ToBytes(uint32(i)))
+		}
+		wf.Exec = 0xff
+
+		sp.Prepare(wf, wf)
+
+		layout := wf.Scratchpad().AsFlat()
+		for i := 0; i < 64; i++ {
+			log.Printf("iter %d", i)
+			Expect(layout.ADDR[i]).To(Equal(uint64(i + 1024)))
+			Expect(layout.DATA[i*4+0]).To(Equal(uint32(i)))
+			Expect(layout.DATA[i*4+1]).To(Equal(uint32(i)))
+			Expect(layout.DATA[i*4+2]).To(Equal(uint32(i)))
+			Expect(layout.DATA[i*4+3]).To(Equal(uint32(i)))
+		}
+		Expect(layout.EXEC).To(Equal(uint64(0xff)))
+	})
+
+	It("should prepare for SMEM", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.SMEM
+		inst.Opcode = 18
+		inst.Data = rdnainsts.NewSRegOperand(0, 0, 4)
+		inst.Offset = rdnainsts.NewIntOperand(1, 1)
+		inst.Base = rdnainsts.NewSRegOperand(4, 4, 2)
+		wf.inst = inst
+
+		wf.WriteReg(rdnainsts.SReg(0), 1, 0, rdnainsts.Uint32ToBytes(100))
+		wf.WriteReg(rdnainsts.SReg(1), 1, 0, rdnainsts.Uint32ToBytes(101))
+		wf.WriteReg(rdnainsts.SReg(2), 1, 0, rdnainsts.Uint32ToBytes(102))
+		wf.WriteReg(rdnainsts.SReg(3), 1, 0, rdnainsts.Uint32ToBytes(103))
+		wf.WriteReg(rdnainsts.SReg(4), 2, 0, rdnainsts.Uint64ToBytes(1024))
+
+		sp.Prepare(wf, wf)
+
+		layout := wf.Scratchpad().AsSMEM()
+		Expect(layout.DATA[0]).To(Equal(uint32(100)))
+		Expect(layout.DATA[1]).To(Equal(uint32(101)))
+		Expect(layout.DATA[2]).To(Equal(uint32(102)))
+		Expect(layout.DATA[3]).To(Equal(uint32(103)))
+		Expect(layout.Offset).To(Equal(uint64(1)))
+		Expect(layout.Base).To(Equal(uint64(1024)))
+
+	})
+
+	It("should prepare for SOPP", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.SOPP
+		inst.SImm16 = rdnainsts.NewIntOperand(1, 1)
+		wf.Exec = 0x0f
+		wf.PC = 160
+		wf.SCC = 1
+		wf.inst = inst
+
+		sp.Prepare(wf, wf)
+
+		layout := wf.Scratchpad().AsSOPP()
+		Expect(layout.EXEC).To(Equal(uint64(0x0f)))
+		Expect(layout.IMM).To(Equal(uint64(1)))
+		Expect(layout.PC).To(Equal(uint64(160)))
+		Expect(layout.SCC).To(Equal(byte(1)))
+	})
+
+	It("should prepare for SOPC", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.SOPC
+		inst.Src0 = rdnainsts.NewSRegOperand(0, 0, 1)
+		wf.WriteReg(rdnainsts.SReg(0), 1, 0, rdnainsts.Uint32ToBytes(100))
+		inst.Src1 = rdnainsts.NewIntOperand(192, 64)
+		wf.inst = inst
+
+		sp.Prepare(wf, wf)
+
+		layout := wf.Scratchpad().AsSOPC()
+		Expect(layout.SRC0).To(Equal(uint64(100)))
+		Expect(layout.SRC1).To(Equal(uint64(64)))
+	})
+
+	It("should prepare for SOPK", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.SOPK
+		inst.Dst = rdnainsts.NewSRegOperand(0, 0, 1)
+		inst.SImm16 = rdnainsts.NewIntOperand(1, 1)
+		wf.inst = inst
+		wf.SCC = 1
+		wf.WriteReg(rdnainsts.SReg(0), 1, 0, rdnainsts.Uint32ToBytes(100))
+
+		sp.Prepare(wf, wf)
+
+		layout := wf.Scratchpad().AsSOPK()
+		Expect(layout.DST).To(Equal(uint64(100)))
+		Expect(layout.IMM).To(Equal(uint64(1)))
+		Expect(layout.SCC).To(Equal(byte(1)))
+	})
+
+	It("should prepare for DS", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.DS
+		inst.Addr = rdnainsts.NewVRegOperand(0, 0, 1)
+		inst.Data = rdnainsts.NewVRegOperand(2, 2, 2)
+		inst.Data1 = rdnainsts.NewVRegOperand(4, 4, 2)
+
+		wf.inst = inst
+		wf.Exec = uint64(0xff)
+
+		for i := 0; i < 64; i++ {
+			wf.WriteReg(rdnainsts.VReg(0), 1, i, rdnainsts.Uint64ToBytes(uint64(i)))
+			wf.WriteReg(rdnainsts.VReg(2), 1, i, rdnainsts.Uint64ToBytes(uint64(i+1)))
+			wf.WriteReg(rdnainsts.VReg(3), 1, i, rdnainsts.Uint64ToBytes(uint64(i+2)))
+			wf.WriteReg(rdnainsts.VReg(4), 1, i, rdnainsts.Uint64ToBytes(uint64(i+3)))
+			wf.WriteReg(rdnainsts.VReg(5), 1, i, rdnainsts.Uint64ToBytes(uint64(i+4)))
+		}
+
+		sp.Prepare(wf, wf)
+
+		layout := wf.Scratchpad().AsDS()
+		Expect(layout.EXEC).To(Equal(uint64(0xff)))
+
+		for i := 0; i < 64; i++ {
+			Expect(layout.ADDR[i]).To(Equal(uint32(i)))
+			Expect(layout.DATA[i*4]).To(Equal(uint32(i + 1)))
+			Expect(layout.DATA[i*4+1]).To(Equal(uint32(i + 2)))
+			Expect(layout.DATA1[i*4]).To(Equal(uint32(i + 3)))
+			Expect(layout.DATA1[i*4+1]).To(Equal(uint32(i + 4)))
+		}
+	})
+
+	It("should commit for SOP1", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.SOP1
+		inst.Dst = rdnainsts.NewSRegOperand(0, 0, 1)
+		wf.inst = inst
+
+		layout := wf.Scratchpad().AsSOP1()
+		layout.EXEC = 0xffffffffffffffff
+		layout.DST = 517
+		layout.EXEC = 0xffffffff00000000
+		layout.SCC = 1
+		layout.PC = 20
+		sp.Commit(wf, wf)
+
+		Expect(wf.SCC).To(Equal(byte(1)))
+		Expect(wf.Exec).To(Equal(uint64(0xffffffff00000000)))
+		Expect(wf.SRegValue(0)).To(Equal(uint32(517)))
+		Expect(wf.PC).To(Equal(uint64(20)))
+	})
+
+	It("should commit for SOP2", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.SOP2
+		inst.Dst = rdnainsts.NewSRegOperand(0, 0, 1)
+		wf.inst = inst
+
+		layout := wf.Scratchpad().AsSOP2()
+		layout.DST = 517
+		layout.SCC = 1
+
+		sp.Commit(wf, wf)
+
+		Expect(wf.SCC).To(Equal(byte(1)))
+		Expect(wf.SRegValue(0)).To(Equal(uint32(517)))
+	})
+
+	It("should commit for VOP1", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.VOP1
+		inst.Dst = rdnainsts.NewVRegOperand(0, 0, 1)
+		wf.inst = inst
+
+		layout := wf.Scratchpad().AsVOP1()
+		layout.EXEC = 0xffffffffffffffff
+		for i := 0; i < 64; i++ {
+			layout.DST[i] = uint64(i)
+		}
+		layout.VCC = uint64(0xffff0000ffff0000)
+
+		sp.Commit(wf, wf)
+
+		for i := 0; i < 64; i++ {
+			Expect(wf.VRegValue(i, 0)).To(Equal(uint32(i)))
+		}
+		Expect(wf.VCC).To(Equal(uint64(0xffff0000ffff0000)))
+	})
+
+	It("should commit for VOP2", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.VOP2
+		inst.Dst = rdnainsts.NewVRegOperand(0, 0, 1)
+		wf.inst = inst
+
+		layout := wf.Scratchpad().AsVOP2()
+		layout.EXEC = 0xffffffffffffffff
+		for i := 0; i < 64; i++ {
+			layout.DST[i] = uint64(i)
+		}
+		layout.VCC = uint64(0xffff0000ffff0000)
+
+		sp.Commit(wf, wf)
+
+		for i := 0; i < 64; i++ {
+			Expect(wf.VRegValue(i, 0)).To(Equal(uint32(i)))
+		}
+		Expect(wf.VCC).To(Equal(uint64(0xffff0000ffff0000)))
+	})
+
+	It("should commit for VOP3a CMP", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.VOP3a
+		inst.Opcode = 20
+		inst.Dst = rdnainsts.NewSRegOperand(0, 0, 1)
+		wf.inst = inst
+
+		layout := wf.Scratchpad().AsVOP3A()
+		layout.EXEC = 0xfffffffffffffffe
+		for i := 0; i < 64; i++ {
+			layout.DST[i] = uint64(i)
+		}
+
+		sp.Commit(wf, wf)
+
+		Expect(wf.SRegValue(0)).To(Equal(uint32(0)))
+	})
+
+	It("should commit for VOP3a", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.VOP3a
+		inst.Opcode = 449
+		inst.Dst = rdnainsts.NewVRegOperand(0, 0, 1)
+		wf.inst = inst
+
+		layout := wf.Scratchpad().AsVOP3A()
+		layout.EXEC = 0xffffffffffffffff
+		for i := 0; i < 64; i++ {
+			layout.DST[i] = uint64(i)
+		}
+		layout.VCC = uint64(0xffff0000ffff0000)
+
+		sp.Commit(wf, wf)
+
+		for i := 0; i < 64; i++ {
+			Expect(wf.VRegValue(i, 0)).To(Equal(uint32(i)))
+		}
+		Expect(wf.VCC).To(Equal(uint64(0xffff0000ffff0000)))
+	})
+
+	It("should commit for VOP3b", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.VOP3b
+		inst.Dst = rdnainsts.NewVRegOperand(0, 0, 1)
+		inst.SDst = rdnainsts.NewSRegOperand(0, 0, 1)
+		wf.inst = inst
+
+		layout := wf.Scratchpad().AsVOP3B()
+		layout.EXEC = 0xffffffffffffffff
+		for i := 0; i < 64; i++ {
+			layout.DST[i] = uint64(i)
+		}
+		layout.SDST = uint64(2)
+		layout.VCC = uint64(0xffff0000ffff0000)
+
+		sp.Commit(wf, wf)
+
+		for i := 0; i < 64; i++ {
+			Expect(wf.VRegValue(i, 0)).To(Equal(uint32(i)))
+		}
+		Expect(wf.SRegValue(0)).To(Equal(uint32(2)))
+		Expect(wf.SRegValue(1)).To(Equal(uint32(0)))
+		Expect(wf.VCC).To(Equal(uint64(0xffff0000ffff0000)))
+	})
+
+	It("should commit VOPC", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.VOPC
+		wf.inst = inst
+
+		layout := wf.Scratchpad().AsVOPC()
+		layout.EXEC = 0xffffffffffffffff
+		layout.VCC = uint64(0xff)
+		layout.EXEC = uint64(0x01)
+
+		sp.Commit(wf, wf)
+
+		Expect(wf.VCC).To(Equal(uint64(0xff)))
+		Expect(wf.Exec).To(Equal(uint64(0x01)))
+	})
+
+	It("should commit for FLAT", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.FLAT
+		inst.Opcode = 20 // Load Dword
+		inst.Dst = rdnainsts.NewVRegOperand(3, 3, 4)
+		wf.inst = inst
+
+		layout := wf.Scratchpad().AsFlat()
+		layout.EXEC = 0xffffffffffffffff
+		for i := 0; i < 64; i++ {
+			layout.DST[i*4+0] = uint32(i)
+			layout.DST[i*4+1] = uint32(i)
+			layout.DST[i*4+2] = uint32(i)
+			layout.DST[i*4+3] = uint32(i)
+		}
+
+		sp.Commit(wf, wf)
+
+		for i := 0; i < 64; i++ {
+			Expect(wf.VRegValue(i, 3)).To(Equal(uint32(i)))
+			Expect(wf.VRegValue(i, 4)).To(Equal(uint32(i)))
+			Expect(wf.VRegValue(i, 5)).To(Equal(uint32(i)))
+			Expect(wf.VRegValue(i, 6)).To(Equal(uint32(i)))
+		}
+	})
+
+	It("should not commit for FLAT store operation", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.FLAT
+		inst.Dst = rdnainsts.NewVRegOperand(3, 3, 4)
+		inst.Opcode = 28 // Store dword
+		wf.inst = inst
+
+		layout := wf.Scratchpad().AsFlat()
+		layout.EXEC = 0xffffffffffffffff
+		for i := 0; i < 64; i++ {
+			layout.DST[i*4+0] = uint32(i)
+			layout.DST[i*4+1] = uint32(i)
+			layout.DST[i*4+2] = uint32(i)
+			layout.DST[i*4+3] = uint32(i)
+		}
+
+		sp.Commit(wf, wf)
+
+		for i := 0; i < 64; i++ {
+			Expect(wf.VRegValue(i, 3)).To(Equal(uint32(0)))
+			Expect(wf.VRegValue(i, 4)).To(Equal(uint32(0)))
+			Expect(wf.VRegValue(i, 5)).To(Equal(uint32(0)))
+			Expect(wf.VRegValue(i, 6)).To(Equal(uint32(0)))
+		}
+	})
+
+	It("should commit for SMEM", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.SMEM
+		inst.Opcode = 4
+		inst.Data = rdnainsts.NewSRegOperand(0, 0, 16)
+		wf.inst = inst
+
+		layout := wf.Scratchpad().AsSMEM()
+		for i := 0; i < 16; i++ {
+			layout.DST[i] = uint32(i)
+		}
+
+		sp.Commit(wf, wf)
+
+		for i := 0; i < 16; i++ {
+			Expect(wf.SRegValue(i)).To(Equal(uint32(i)))
+		}
+	})
+
+	It("should commit for SOPC", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.SOPC
+		wf.inst = inst
+
+		layout := wf.Scratchpad().AsSOPC()
+		layout.SCC = 1
+
+		sp.Commit(wf, wf)
+
+		Expect(wf.SCC).To(Equal(byte(1)))
+	})
+
+	It("should commit for SOPP", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.SOPP
+		wf.inst = inst
+		wf.PC = 0
+
+		layout := wf.Scratchpad().AsSOPP()
+		layout.PC = 164
+		layout.EXEC = 0xffffffffffffffff
+
+		sp.Commit(wf, wf)
+
+		Expect(wf.PC).To(Equal(uint64(164)))
+	})
+
+	It("should commit for SOPK", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.SOPK
+		inst.Dst = rdnainsts.NewSRegOperand(0, 0, 1)
+		wf.inst = inst
+
+		layout := wf.Scratchpad().AsSOPK()
+		layout.SCC = 1
+		layout.DST = 517
+
+		sp.Commit(wf, wf)
+
+		Expect(wf.SCC).To(Equal(byte(1)))
+		Expect(wf.SRegValue(0)).To(Equal(uint32(517)))
+	})
+
+	It("should commit for DS", func() {
+		inst := rdnainsts.NewInst()
+		inst.FormatType = rdnainsts.DS
+		inst.Dst = rdnainsts.NewVRegOperand(0, 0, 2)
+		wf.inst = inst
+
+		layout := wf.Scratchpad().AsDS()
+		layout.EXEC = 0xffffffffffffffff
+		for i := 0; i < 64; i++ {
+			layout.DST[i*4] = uint32(i)
+			layout.DST[i*4+1] = uint32(i + 1)
+		}
+
+		sp.Commit(wf, wf)
+
+		for i := 0; i < 64; i++ {
+			Expect(wf.VRegValue(i, 0)).To(Equal(uint32(i)))
+			Expect(wf.VRegValue(i, 1)).To(Equal(uint32(i + 1)))
+		}
+	})
+})

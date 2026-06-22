@@ -1,0 +1,1855 @@
+{
+  "schema": "hipengine.agentic_traces.v1",
+  "traces": [
+    {
+      "name": "tool_loop_turn_1_non_streaming",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": [
+        "<tool_call>{\"name\":\"read\",\"arguments\":{\"path\":\"README.md\"}}</tool_call>"
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Read the README."}],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "read",
+              "description": "Read a file",
+              "parameters": {"type": "object"}
+            }
+          }
+        ]
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "tool_calls",
+        "message_content": "",
+        "tool_call": {"name": "read", "arguments": {"path": "README.md"}},
+        "prompt_contains": ["<tools>", "\"name\":\"read\""]
+      }
+    },
+    {
+      "name": "tool_loop_turn_2_non_streaming_final_answer",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": ["The README says hello."],
+      "request": {
+        "model": "fake-model",
+        "messages": [
+          {"role": "user", "content": "Read the README."},
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call_1",
+                "type": "function",
+                "function": {"name": "read", "arguments": "{\"path\":\"README.md\"}"}
+              }
+            ]
+          },
+          {"role": "tool", "tool_call_id": "call_1", "content": "hello"}
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "read",
+              "description": "Read a file",
+              "parameters": {"type": "object"}
+            }
+          }
+        ]
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "message_content": "The README says hello.",
+        "prompt_contains": ["<tool_response>\nhello\n</tool_response>"]
+      }
+    },
+    {
+      "name": "reasoning_tool_call_non_streaming",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": [
+        "<think>need file</think><tool_call>{\"name\":\"read\",\"arguments\":{\"path\":\"README.md\"}}</tool_call>"
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Read after thinking."}],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "read",
+              "description": "Read a file",
+              "parameters": {
+                "type": "object",
+                "properties": {"path": {"type": "string"}},
+                "required": ["path"],
+                "additionalProperties": false
+              },
+              "strict": true
+            }
+          }
+        ]
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "tool_calls",
+        "finish_details": {
+          "reason": "tool_calls",
+          "cache_action": "append_none",
+          "phase": "tool_call",
+          "reasoning_tokens": 2,
+          "tool_call_tokens": 1
+        },
+        "message_content": "",
+        "reasoning_content": "need file",
+        "tool_call": {"name": "read", "arguments": {"path": "README.md"}},
+        "response_excludes": ["<tool_call>"]
+      }
+    },
+    {
+      "name": "strict_malformed_tool_call_non_streaming",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": [
+        "<tool_call>\n<tool_call>{\"name\":\"read\",\"arguments\":</tool_call>"
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Read strictly."}],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "read",
+              "description": "Read a file",
+              "parameters": {
+                "type": "object",
+                "properties": {"path": {"type": "string"}},
+                "required": ["path"],
+                "additionalProperties": false
+              },
+              "strict": true
+            }
+          }
+        ]
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "finish_details": {"reason": "invalid_tool_call", "cache_action": "append_none"},
+        "message_content": "",
+        "no_tool_calls": true,
+        "response_excludes": ["<tool_call>"]
+      }
+    },
+    {
+      "name": "duplicated_tool_call_start_compat_non_streaming",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": [
+        "<tool_call>\n<tool_call>{\"name\":\"read\",\"arguments\":{\"path\":\"README.md\"}}</tool_call>"
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Read compatibly."}],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "read",
+              "description": "Read a file",
+              "parameters": {"type": "object"},
+              "strict": true
+            }
+          }
+        ]
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "tool_calls",
+        "finish_details": {
+          "reason": "tool_calls",
+          "cache_action": "append_none",
+          "phase": "tool_call",
+          "tool_call_tokens": 2
+        },
+        "message_content": "",
+        "tool_call": {"name": "read", "arguments": {"path": "README.md"}},
+        "response_excludes": ["<tool_call>"]
+      }
+    },
+    {
+      "name": "auto_unknown_tool_name_non_streaming",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": [
+        "<tool_call>{\"name\":\"write\",\"arguments\":{\"path\":\"README.md\"}}</tool_call>"
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Read compatibly."}],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "read",
+              "description": "Read a file",
+              "parameters": {"type": "object"}
+            }
+          }
+        ]
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "finish_details": {"reason": "invalid_tool_call", "cache_action": "append_none"},
+        "message_content": "",
+        "no_tool_calls": true,
+        "response_excludes": ["<tool_call>", "write"]
+      }
+    },
+    {
+      "name": "required_tool_missing_non_streaming",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": ["ordinary answer"],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Read strictly."}],
+        "tool_choice": "required",
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "read",
+              "description": "Read a file",
+              "parameters": {"type": "object"}
+            }
+          }
+        ]
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "finish_details": {
+          "reason": "tool_required_not_satisfied",
+          "cache_action": "append_none"
+        },
+        "message_content": "",
+        "no_tool_calls": true,
+        "response_excludes": ["ordinary answer"]
+      }
+    },
+    {
+      "name": "specific_tool_wrong_function_non_streaming",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": [
+        "<tool_call>{\"name\":\"write\",\"arguments\":{\"path\":\"README.md\"}}</tool_call>"
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Read strictly."}],
+        "tool_choice": {"type": "function", "function": {"name": "read"}},
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "read",
+              "description": "Read a file",
+              "parameters": {"type": "object"}
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "write",
+              "description": "Write a file",
+              "parameters": {"type": "object"}
+            }
+          }
+        ]
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "finish_details": {"reason": "invalid_tool_call", "cache_action": "append_none"},
+        "message_content": "",
+        "no_tool_calls": true,
+        "response_excludes": ["<tool_call>", "write"]
+      }
+    },
+    {
+      "name": "tool_choice_none_rejects_tool_call_non_streaming",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": [
+        "<tool_call>{\"name\":\"read\",\"arguments\":{\"path\":\"README.md\"}}</tool_call>"
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Answer without tools."}],
+        "tool_choice": "none",
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "read",
+              "description": "Read a file",
+              "parameters": {"type": "object"}
+            }
+          }
+        ]
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "finish_details": {"reason": "invalid_tool_call", "cache_action": "append_none"},
+        "message_content": "",
+        "no_tool_calls": true,
+        "response_excludes": ["<tool_call>"]
+      }
+    },
+    {
+      "name": "parallel_tool_calls_without_opt_in_non_streaming",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": [
+        "<tool_call>{\"name\":\"read\",\"arguments\":{\"path\":\"README.md\"}}</tool_call><tool_call>{\"name\":\"read\",\"arguments\":{\"path\":\"WORKLOG.md\"}}</tool_call>"
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Read two files."}],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "read",
+              "description": "Read a file",
+              "strict": true,
+              "parameters": {
+                "type": "object",
+                "properties": {"path": {"type": "string"}},
+                "required": ["path"],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "finish_details": {"reason": "invalid_tool_call", "cache_action": "append_none"},
+        "message_content": "",
+        "no_tool_calls": true,
+        "response_excludes": ["<tool_call>"]
+      }
+    },
+    {
+      "name": "tool_call_streaming",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_stream_chunks": [
+        "<tool_call>{\"name\":\"bash\",\"arguments\":{\"command\":\"pwd\"}}</tool_call>"
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Run pwd."}],
+        "stream": true,
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "bash",
+              "description": "Run a command",
+              "parameters": {"type": "object"}
+            }
+          }
+        ]
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "tool_calls",
+        "tool_call": {"name": "bash", "arguments": {"command": "pwd"}}
+      }
+    },
+    {
+      "name": "reasoning_tool_call_streaming",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_stream_chunks": [
+        "<think>need shell</think><tool_call>{\"name\":\"bash\",\"arguments\":{\"command\":\"pwd\"}}</tool_call>"
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Think, then run pwd."}],
+        "stream": true,
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "bash",
+              "description": "Run a command",
+              "parameters": {
+                "type": "object",
+                "properties": {"command": {"type": "string"}},
+                "required": ["command"],
+                "additionalProperties": false
+              },
+              "strict": true
+            }
+          }
+        ]
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "tool_calls",
+        "finish_details": {
+          "reason": "tool_calls",
+          "cache_action": "append_none",
+          "phase": "tool_call",
+          "reasoning_tokens": 2,
+          "tool_call_tokens": 1
+        },
+        "reasoning_content": "need shell",
+        "tool_call": {"name": "bash", "arguments": {"command": "pwd"}},
+        "response_excludes": ["<tool_call>"]
+      }
+    },
+    {
+      "name": "parallel_tool_calls_streaming",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_stream_chunks": [
+        "<tool_call>{\"name\":\"read\",\"arguments\":{\"path\":\"README.md\"}}</tool_call><tool_call>{\"name\":\"read\",\"arguments\":{\"path\":\"WORKLOG.md\"}}</tool_call>"
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Read both files."}],
+        "stream": true,
+        "parallel_tool_calls": true,
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "read",
+              "description": "Read a file",
+              "parameters": {
+                "type": "object",
+                "properties": {"path": {"type": "string"}},
+                "required": ["path"],
+                "additionalProperties": false
+              },
+              "strict": true
+            }
+          }
+        ]
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "tool_calls",
+        "finish_details": {
+          "reason": "tool_calls",
+          "cache_action": "append_none",
+          "phase": "tool_call",
+          "tool_call_tokens": 2
+        },
+        "tool_calls": [
+          {"index": 0, "name": "read", "arguments": {"path": "README.md"}},
+          {"index": 1, "name": "read", "arguments": {"path": "WORKLOG.md"}}
+        ],
+        "response_excludes": ["<tool_call>"]
+      }
+    },
+    {
+      "name": "reasoning_split_non_streaming",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": ["<think>scratch pad</think>visible answer"],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Think briefly."}]
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "message_content": "visible answer",
+        "reasoning_content": "scratch pad"
+      }
+    },
+    {
+      "name": "no_think_prompt_rendering",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": ["direct answer"],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Answer directly."}],
+        "enable_thinking": false
+      },
+      "expected": {
+        "status_code": 200,
+        "message_content": "direct answer",
+        "prompt_endswith": "<|im_start|>assistant\n<think>\n\n</think>\n\n"
+      }
+    },
+    {
+      "name": "reasoning_effort_low_prompt_budget",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": ["direct answer"],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Think only if needed."}],
+        "reasoning": {"enabled": true, "effort": "low"},
+        "max_tokens": 2048
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "message_content": "direct answer",
+        "prompt_contains": [
+          "close </think> before exceeding 512 hidden reasoning tokens",
+          "reserve at least 512 tokens for the final answer or tool call",
+          "begin closing during the final 128 hidden reasoning tokens"
+        ],
+        "prompt_excludes": ["<tools>"]
+      }
+    },
+    {
+      "name": "json_schema_violation_chat",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": ["{\"ok\":\"yes\",\"path\":\"README.md\"}"],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Return structured output."}],
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "agent_result",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ok": {"type": "boolean"},
+                "path": {"type": "string", "minLength": 1}
+              },
+              "required": ["ok", "path"],
+              "additionalProperties": false
+            }
+          }
+        }
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "finish_details": {"reason": "schema_violation", "cache_action": "append_none"},
+        "message_content": "",
+        "prompt_contains": ["Return only JSON that satisfies this JSON schema"]
+      }
+    },
+    {
+      "name": "guided_json_schema_chat_reasoning_success",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": ["<think>shape</think>{\"ok\":true,\"path\":\"README.md\"}"],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Return guided JSON."}],
+        "guided_json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "ok": {"type": "boolean"},
+              "path": {"type": "string", "minLength": 1}
+            },
+            "required": ["ok", "path"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "finish_details": {"reason": "stop", "cache_action": "append_none"},
+        "message_content": "{\"ok\":true,\"path\":\"README.md\"}",
+        "reasoning_content": "shape",
+        "prompt_contains": ["Return only JSON that satisfies this JSON schema"],
+        "response_excludes": ["<think>"]
+      }
+    },
+    {
+      "name": "guided_json_schema_local_ref_chat_reasoning_success",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": ["<think>shape</think>{\"path\":\"README.md\",\"result\":\"ok\"}"],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Return guided JSON with refs."}],
+        "guided_json": {
+          "schema": {
+            "type": "object",
+            "$defs": {
+              "file_ref": {"type": "string", "pattern": "^[A-Z]+[.]md$"},
+              "result_tag": {"enum": ["ok", "skip"]}
+            },
+            "properties": {
+              "path": {"$ref": "#/$defs/file_ref"},
+              "result": {"$ref": "#/$defs/result_tag"}
+            },
+            "required": ["path", "result"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "finish_details": {"reason": "stop", "cache_action": "append_none"},
+        "message_content": "{\"path\":\"README.md\",\"result\":\"ok\"}",
+        "reasoning_content": "shape",
+        "prompt_contains": ["Return only JSON that satisfies this JSON schema"],
+        "response_excludes": ["<think>"]
+      }
+    },
+    {
+      "name": "guided_choice_chat_reasoning_success",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": ["<think>choose</think>no"],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Choose yes or no."}],
+        "guided_choice": ["yes", "no"]
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "finish_details": {"reason": "stop", "cache_action": "append_none"},
+        "message_content": "no",
+        "reasoning_content": "choose",
+        "prompt_contains": ["Return exactly one of these choices and no other text"],
+        "response_excludes": ["<think>"]
+      }
+    },
+    {
+      "name": "guided_regex_completion_rejects_mismatch",
+      "kind": "http",
+      "endpoint": "/v1/completions",
+      "fake_outputs": ["AB"],
+      "request": {
+        "model": "fake-model",
+        "prompt": "Return an identifier.",
+        "guided_regex": "[A-Z]{2}-\\d{2}"
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "finish_details": {"reason": "schema_violation", "cache_action": "append_none"},
+        "text": ""
+      }
+    },
+    {
+      "name": "guided_patch_chat_reasoning_fenced_diff",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": [
+        "<think>patch</think>```diff\ndiff --git a/README.md b/README.md\nindex 1111111..2222222 100644\n--- a/README.md\n+++ b/README.md\n@@ -1,2 +1,2 @@\n hello\n-old\n+new\n```"
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "edit README"}],
+        "guided_patch": {"format": "unified_diff"}
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "finish_details": {"reason": "stop", "cache_action": "append_none"},
+        "message_content": "```diff\ndiff --git a/README.md b/README.md\nindex 1111111..2222222 100644\n--- a/README.md\n+++ b/README.md\n@@ -1,2 +1,2 @@\n hello\n-old\n+new\n```",
+        "reasoning_content": "patch",
+        "prompt_contains": ["Return only a valid unified diff patch"],
+        "response_excludes": ["<think>"]
+      }
+    },
+    {
+      "name": "guided_diff_completion_rejects_prefaced_patch",
+      "kind": "http",
+      "endpoint": "/v1/completions",
+      "fake_outputs": [
+        "Here is the patch:\ndiff --git a/README.md b/README.md\nindex 1111111..2222222 100644\n--- a/README.md\n+++ b/README.md\n@@ -1,2 +1,2 @@\n hello\n-old\n+new"
+      ],
+      "request": {
+        "model": "fake-model",
+        "prompt": "patch README",
+        "guided_diff": true
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "finish_details": {"reason": "schema_violation", "cache_action": "append_none"},
+        "text": ""
+      }
+    },
+    {
+      "name": "stateless_session_append_none_completion",
+      "kind": "http",
+      "endpoint": "/v1/completions",
+      "fake_outputs": ["stateless answer"],
+      "request": {
+        "model": "fake-model",
+        "prompt": "answer without retaining",
+        "session": {"commit": "append_none"}
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "text": "stateless answer",
+        "finish_details": {"reason": "stop", "cache_action": "append_none"}
+      }
+    },
+    {
+      "name": "session_reasoning_tool_loop_sequence",
+      "kind": "http_sequence",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": [
+        "<think>hidden plan</think><tool_call>{\"name\":\"read\",\"arguments\":{\"path\":\"README.md\"}}</tool_call>",
+        "README says hello from a session."
+      ],
+      "steps": [
+        {
+          "request": {
+            "model": "fake-model",
+            "messages": [{"role": "user", "content": "Read the README with hidden reasoning."}],
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "read",
+                  "description": "Read a file",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {"path": {"type": "string"}},
+                    "required": ["path"],
+                    "additionalProperties": false
+                  },
+                  "strict": true
+                }
+              }
+            ],
+            "session": {"id": "sess_reasoning_tool"}
+          },
+          "expected": {
+            "status_code": 200,
+            "finish_reason": "tool_calls",
+            "finish_details": {
+              "reason": "tool_calls",
+              "cache_action": "append_visible_only",
+              "phase": "tool_call",
+              "reasoning_tokens": 2,
+              "tool_call_tokens": 1
+            },
+            "message_content": "",
+            "reasoning_content": "hidden plan",
+            "tool_call": {"name": "read", "arguments": {"path": "README.md"}},
+            "capture_tool_call_id": true,
+            "response_excludes": ["<think>", "<tool_call>"]
+          }
+        },
+        {
+          "request": {
+            "model": "fake-model",
+            "messages": [{"role": "tool", "tool_call_id": "$tool_call_id", "content": "hello from README"}],
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "read",
+                  "description": "Read a file",
+                  "parameters": {"type": "object"}
+                }
+              }
+            ],
+            "session": {"id": "sess_reasoning_tool", "commit": "append_none"}
+          },
+          "expected": {
+            "status_code": 200,
+            "finish_reason": "stop",
+            "message_content": "README says hello from a session.",
+            "finish_details": {"reason": "stop", "cache_action": "append_none"},
+            "prompt_contains": [
+              "Read the README with hidden reasoning.",
+              "<tool_call>{\"name\":\"read\",\"arguments\":{\"path\":\"README.md\"}}</tool_call>",
+              "<tool_response>\nhello from README\n</tool_response>"
+            ],
+            "prompt_excludes": ["hidden plan", "<think>"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "session_snapshot_restore_reasoning_tool_loop_sequence",
+      "kind": "http_sequence",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": [
+        "<think>hidden plan</think><tool_call>{\"name\":\"read\",\"arguments\":{\"path\":\"README.md\"}}</tool_call>",
+        "README says hello after snapshot restore."
+      ],
+      "steps": [
+        {
+          "request": {
+            "model": "fake-model",
+            "messages": [{"role": "user", "content": "Read the README with hidden reasoning."}],
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "read",
+                  "description": "Read a file",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {"path": {"type": "string"}},
+                    "required": ["path"],
+                    "additionalProperties": false
+                  },
+                  "strict": true
+                }
+              }
+            ],
+            "session": {"id": "sess_snapshot_tool"}
+          },
+          "expected": {
+            "status_code": 200,
+            "finish_reason": "tool_calls",
+            "finish_details": {
+              "reason": "tool_calls",
+              "cache_action": "append_visible_only",
+              "phase": "tool_call",
+              "reasoning_tokens": 2,
+              "tool_call_tokens": 1
+            },
+            "message_content": "",
+            "reasoning_content": "hidden plan",
+            "tool_call": {"name": "read", "arguments": {"path": "README.md"}},
+            "capture_tool_call_id": true,
+            "response_excludes": ["<think>", "<tool_call>"]
+          }
+        },
+        {
+          "method": "GET",
+          "endpoint": "/v1/hipengine/sessions/sess_snapshot_tool/snapshot",
+          "expected": {
+            "status_code": 200,
+            "object": "hipengine.session.snapshot",
+            "snapshot_messages": [
+              {"role": "user", "content": "Read the README with hidden reasoning."},
+              {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                  {
+                    "id": "$tool_call_id",
+                    "type": "function",
+                    "function": {
+                      "name": "read",
+                      "arguments": "{\"path\":\"README.md\"}"
+                    }
+                  }
+                ]
+              }
+            ],
+            "capture_snapshot": true,
+            "response_excludes": ["hidden plan", "<think>"]
+          }
+        },
+        {
+          "method": "DELETE",
+          "endpoint": "/v1/hipengine/sessions/sess_snapshot_tool",
+          "expected": {
+            "status_code": 200,
+            "object": "hipengine.session.deleted",
+            "deleted": true
+          }
+        },
+        {
+          "endpoint": "/v1/hipengine/sessions/sess_snapshot_tool/snapshot",
+          "request": "$snapshot",
+          "expected": {
+            "status_code": 200,
+            "object": "hipengine.session.restored",
+            "restored": true,
+            "message_count": 2
+          }
+        },
+        {
+          "request": {
+            "model": "fake-model",
+            "messages": [{"role": "tool", "tool_call_id": "$tool_call_id", "content": "hello from README"}],
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "read",
+                  "description": "Read a file",
+                  "parameters": {"type": "object"}
+                }
+              }
+            ],
+            "session": {"id": "sess_snapshot_tool", "commit": "append_none"}
+          },
+          "expected": {
+            "status_code": 200,
+            "finish_reason": "stop",
+            "message_content": "README says hello after snapshot restore.",
+            "finish_details": {"reason": "stop", "cache_action": "append_none"},
+            "prompt_contains": [
+              "Read the README with hidden reasoning.",
+              "<tool_call>{\"name\":\"read\",\"arguments\":{\"path\":\"README.md\"}}</tool_call>",
+              "<tool_response>\nhello from README\n</tool_response>"
+            ],
+            "prompt_excludes": ["hidden plan", "<think>"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "session_rollback_visible_transcript_sequence",
+      "kind": "http_sequence",
+      "endpoint": "/v1/chat/completions",
+      "fake_outputs": [
+        "base answer",
+        "second answer",
+        "after rollback answer"
+      ],
+      "steps": [
+        {
+          "request": {
+            "model": "fake-model",
+            "messages": [{"role": "user", "content": "base prompt"}],
+            "session": {"id": "sess_rollback_trace"},
+            "max_tokens": 4
+          },
+          "expected": {
+            "status_code": 200,
+            "finish_reason": "stop",
+            "message_content": "base answer",
+            "finish_details": {
+              "reason": "stop",
+              "cache_action": "append_visible_only"
+            }
+          }
+        },
+        {
+          "request": {
+            "model": "fake-model",
+            "messages": [{"role": "user", "content": "second turn"}],
+            "session": {"id": "sess_rollback_trace"},
+            "max_tokens": 4
+          },
+          "expected": {
+            "status_code": 200,
+            "finish_reason": "stop",
+            "message_content": "second answer",
+            "finish_details": {
+              "reason": "stop",
+              "cache_action": "append_visible_only"
+            },
+            "prompt_contains": ["base prompt", "base answer", "second turn"]
+          }
+        },
+        {
+          "endpoint": "/v1/hipengine/sessions/sess_rollback_trace/rollback",
+          "request": {"message_count": 2},
+          "expected": {
+            "status_code": 200,
+            "object": "hipengine.session.rolled_back",
+            "rolled_back": true,
+            "resident_state_reuse": false,
+            "previous_message_count": 4,
+            "message_count": 2,
+            "response_excludes": [
+              "base prompt",
+              "base answer",
+              "second turn",
+              "second answer"
+            ]
+          }
+        },
+        {
+          "request": {
+            "model": "fake-model",
+            "messages": [{"role": "user", "content": "after rollback turn"}],
+            "session": {"id": "sess_rollback_trace", "commit": "append_none"},
+            "max_tokens": 4
+          },
+          "expected": {
+            "status_code": 200,
+            "finish_reason": "stop",
+            "message_content": "after rollback answer",
+            "finish_details": {
+              "reason": "stop",
+              "cache_action": "append_none"
+            },
+            "prompt_contains": [
+              "base prompt",
+              "base answer",
+              "after rollback turn"
+            ],
+            "prompt_excludes": ["second turn", "second answer"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "length_finish_completion",
+      "kind": "http",
+      "endpoint": "/v1/completions",
+      "fake_detailed_outputs": [
+        {"text": "partial", "finish_details": {"reason": "length", "length_limit": 1}}
+      ],
+      "request": {
+        "model": "fake-model",
+        "prompt": "cut short",
+        "max_tokens": 1,
+        "logit_bias": {"12": -1}
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "length",
+        "text": "partial",
+        "finish_details": {
+          "reason": "length",
+          "length_limit": 1,
+          "cache_action": "append_none",
+          "continuation_eligible": false
+        },
+        "sampling": {"logit_bias": [[12, -1.0]]}
+      }
+    },
+    {
+      "name": "length_finish_chat_reasoning_phase",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_detailed_outputs": [
+        {"text": "<think>scratch", "finish_details": {"reason": "length", "length_limit": 5}}
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "think briefly"}],
+        "max_tokens": 5
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "length",
+        "message_content": "",
+        "reasoning_content": "scratch",
+        "finish_details": {
+          "reason": "length",
+          "length_limit": 5,
+          "cache_action": "append_none",
+          "phase": "reasoning",
+          "continuation_eligible": false
+        }
+      }
+    },
+    {
+      "name": "length_finish_chat_closing_think_phase",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_detailed_outputs": [
+        {"text": "<think>scratch</thi", "finish_details": {"reason": "length", "length_limit": 5}}
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "think briefly"}],
+        "max_tokens": 5
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "length",
+        "message_content": "",
+        "reasoning_content": "scratch</thi",
+        "finish_details": {
+          "reason": "length",
+          "length_limit": 5,
+          "cache_action": "append_none",
+          "phase": "closing_think",
+          "continuation_eligible": false
+        }
+      }
+    },
+    {
+      "name": "length_finish_chat_answer_continuation",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_detailed_outputs": [
+        {"text": "partial answer", "finish_details": {"reason": "length", "length_limit": 5}}
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "answer briefly"}],
+        "max_tokens": 5
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "length",
+        "message_content": "partial answer",
+        "continuation_id": true,
+        "finish_details": {
+          "reason": "length",
+          "length_limit": 5,
+          "cache_action": "append_none",
+          "phase": "answer",
+          "continuation_eligible": true,
+          "continuation_id": "$continuation_id"
+        }
+      }
+    },
+    {
+      "name": "length_finish_chat_structured_continuation",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_detailed_outputs": [
+        {"text": "{\"status\":", "finish_details": {"reason": "length", "length_limit": 6}}
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "Return JSON."}],
+        "response_format": {"type": "json_object"},
+        "max_tokens": 6
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "length",
+        "message_content": "{\"status\":",
+        "continuation_id": true,
+        "finish_details": {
+          "reason": "length",
+          "length_limit": 6,
+          "cache_action": "append_none",
+          "phase": "structured",
+          "continuation_eligible": true,
+          "continuation_id": "$continuation_id"
+        }
+      }
+    },
+    {
+      "name": "continuation_resume_chat_answer_sequence",
+      "kind": "http_sequence",
+      "endpoint": "/v1/chat/completions",
+      "fake_detailed_outputs": [
+        {"text": "partial answer", "finish_details": {"reason": "length", "length_limit": 5}},
+        {"text": " complete.", "finish_details": {"reason": "eos", "eos_token_id": 151645}}
+      ],
+      "steps": [
+        {
+          "request": {
+            "model": "fake-model",
+            "messages": [{"role": "user", "content": "answer briefly"}],
+            "max_tokens": 5
+          },
+          "expected": {
+            "status_code": 200,
+            "finish_reason": "length",
+            "message_content": "partial answer",
+            "continuation_id": true,
+            "finish_details": {
+              "reason": "length",
+              "length_limit": 5,
+              "cache_action": "append_none",
+              "phase": "answer",
+              "continuation_eligible": true,
+              "continuation_id": "$continuation_id"
+            }
+          }
+        },
+        {
+          "request": {
+            "model": "fake-model",
+            "continuation_id": "$continuation_id",
+            "max_tokens": 4
+          },
+          "expected": {
+            "status_code": 200,
+            "finish_reason": "stop",
+            "message_content": "partial answer complete.",
+            "finish_details": {
+              "reason": "eos",
+              "eos_token_id": 151645,
+              "cache_action": "append_none"
+            },
+            "prompt_endswith": "partial answer"
+          }
+        }
+      ]
+    },
+    {
+      "name": "session_continuation_resume_chat_sequence",
+      "kind": "http_sequence",
+      "endpoint": "/v1/chat/completions",
+      "fake_detailed_outputs": [
+        {"text": "partial", "finish_details": {"reason": "length", "length_limit": 1}},
+        {"text": " answer", "finish_details": {"reason": "eos", "eos_token_id": 151645}}
+      ],
+      "steps": [
+        {
+          "request": {
+            "model": "fake-model",
+            "messages": [{"role": "user", "content": "continue"}],
+            "session": {"id": "sess_trace_continue"},
+            "max_tokens": 1
+          },
+          "expected": {
+            "status_code": 200,
+            "finish_reason": "length",
+            "message_content": "partial",
+            "continuation_id": true,
+            "finish_details": {
+              "reason": "length",
+              "length_limit": 1,
+              "cache_action": "append_prompt_only",
+              "phase": "answer",
+              "continuation_eligible": true,
+              "continuation_id": "$continuation_id"
+            }
+          }
+        },
+        {
+          "request": {
+            "model": "fake-model",
+            "continuation_id": "$continuation_id",
+            "session": {"id": "sess_trace_continue"},
+            "max_tokens": 4
+          },
+          "expected": {
+            "status_code": 200,
+            "finish_reason": "stop",
+            "message_content": "partial answer",
+            "finish_details": {
+              "reason": "eos",
+              "eos_token_id": 151645,
+              "cache_action": "append_visible_only"
+            },
+            "prompt_endswith": "partial"
+          }
+        }
+      ]
+    },
+    {
+      "name": "length_finish_chat_partial_tool_call",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_detailed_outputs": [
+        {"text": "<tool_call>{\"name\":\"read\"", "finish_details": {"reason": "length", "length_limit": 6}}
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "read the readme"}],
+        "tool_choice": "required",
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "read",
+              "description": "Read a file",
+              "parameters": {"type": "object"}
+            }
+          }
+        ]
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "length",
+        "message_content": "",
+        "no_tool_calls": true,
+        "finish_details": {
+          "reason": "invalid_tool_call",
+          "length_limit": 6,
+          "cache_action": "append_none",
+          "phase": "tool_call",
+          "continuation_eligible": false
+        },
+        "response_excludes": ["<tool_call>"]
+      }
+    },
+    {
+      "name": "context_overflow_completion_error",
+      "kind": "http",
+      "endpoint": "/v1/completions",
+      "server_config": {"max_context_tokens": 5},
+      "request": {
+        "model": "fake-model",
+        "prompt": "one two three four",
+        "max_tokens": 2
+      },
+      "expected": {
+        "status_code": 400,
+        "error_code": "context_length_exceeded",
+        "error_param": "max_tokens",
+        "hipengine_error_code": "context_overflow",
+        "fit_context": {
+          "prompt_tokens": 4,
+          "max_context_tokens": 5,
+          "effective_max_tokens": 2,
+          "max_allowed_max_tokens": 0,
+          "recommended_max_tokens": 0,
+          "required_context_tokens": 7,
+          "overflow_tokens": 2,
+          "fits": false,
+          "clear_policy": "reject",
+          "would_truncate": false,
+          "would_drop": []
+        }
+      }
+    },
+    {
+      "name": "context_overflow_completion_stream_error",
+      "kind": "http",
+      "endpoint": "/v1/completions",
+      "server_config": {"max_context_tokens": 5},
+      "request": {
+        "model": "fake-model",
+        "prompt": "one two three four",
+        "max_tokens": 2,
+        "stream": true,
+        "stream_options": {"include_hipengine": true}
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "error",
+        "error_code": "context_length_exceeded",
+        "error_param": "max_tokens",
+        "hipengine_error_code": "context_overflow",
+        "hipengine_event": "error",
+        "fit_context": {
+          "prompt_tokens": 4,
+          "max_context_tokens": 5,
+          "effective_max_tokens": 2,
+          "max_allowed_max_tokens": 0,
+          "recommended_max_tokens": 0,
+          "required_context_tokens": 7,
+          "overflow_tokens": 2,
+          "fits": false,
+          "clear_policy": "reject",
+          "would_truncate": false,
+          "would_drop": []
+        }
+      }
+    },
+    {
+      "name": "model_unavailable_completion_error",
+      "kind": "http",
+      "endpoint": "/v1/completions",
+      "request": {
+        "model": "other-model",
+        "prompt": "hello"
+      },
+      "expected": {
+        "status_code": 404,
+        "error_code": "model_not_found",
+        "error_param": "model",
+        "hipengine_error_code": "model_unavailable"
+      }
+    },
+    {
+      "name": "unsupported_parameter_completion_error",
+      "kind": "http",
+      "endpoint": "/v1/completions",
+      "request": {
+        "model": "fake-model",
+        "prompt": "hello",
+        "typical_p": 0.9
+      },
+      "expected": {
+        "status_code": 400,
+        "error_code": "unsupported_parameter",
+        "error_param": "typical_p",
+        "hipengine_error_code": "unsupported_parameter"
+      }
+    },
+    {
+      "name": "schema_violation_missing_prompt_error",
+      "kind": "http",
+      "endpoint": "/v1/completions",
+      "request": {
+        "model": "fake-model",
+        "max_tokens": 1
+      },
+      "expected": {
+        "status_code": 400,
+        "error_code": "invalid_request",
+        "error_param": "prompt",
+        "hipengine_error_code": "schema_violation"
+      }
+    },
+    {
+      "name": "unsupported_feature_tokenize_error",
+      "kind": "http",
+      "endpoint": "/v1/hipengine/tokenize",
+      "request": {
+        "text": "hello"
+      },
+      "expected": {
+        "status_code": 501,
+        "error_code": "unsupported_feature",
+        "error_param": "text",
+        "hipengine_error_code": "unsupported_feature"
+      }
+    },
+    {
+      "name": "completion_logprobs_success",
+      "kind": "http",
+      "endpoint": "/v1/completions",
+      "fake_detailed_outputs": [
+        {
+          "text": "alpha beta",
+          "token_logprobs": [
+            {
+              "token_id": 1,
+              "token_text": "alpha",
+              "logprob": -0.25,
+              "top_logprobs": [[1, "alpha", -0.25], [2, "omega", -1.5]]
+            },
+            {
+              "token_id": 3,
+              "token_text": " beta",
+              "logprob": -0.5,
+              "top_logprobs": [[3, " beta", -0.5]]
+            }
+          ],
+          "finish_details": {"reason": "stop"}
+        }
+      ],
+      "request": {
+        "model": "fake-model",
+        "prompt": "hello",
+        "max_tokens": 2,
+        "logprobs": 2
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "text": "alpha beta",
+        "finish_details": {"reason": "stop", "cache_action": "append_none"},
+        "logprobs": {
+          "tokens": ["alpha", " beta"],
+          "token_logprobs": [-0.25, -0.5],
+          "top_logprobs": [{"alpha": -0.25, "omega": -1.5}, {" beta": -0.5}],
+          "text_offset": [0, 5]
+        },
+        "sampling": {"logprobs": true, "top_logprobs": 2}
+      }
+    },
+    {
+      "name": "completion_logprobs_omitted_reason",
+      "kind": "http",
+      "endpoint": "/v1/completions",
+      "fake_detailed_outputs": [
+        {
+          "text": "alpha beta",
+          "token_logprobs": [
+            {"token_id": 1, "token_text": "alpha", "logprob": null},
+            {"token_id": 3, "token_text": " beta", "logprob": -0.5}
+          ],
+          "finish_details": {"reason": "stop"}
+        }
+      ],
+      "request": {
+        "model": "fake-model",
+        "prompt": "hello",
+        "max_tokens": 2,
+        "logprobs": 1
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "text": "alpha beta",
+        "finish_details": {"reason": "stop", "cache_action": "append_none"},
+        "logprobs": {
+          "tokens": ["alpha", " beta"],
+          "token_logprobs": [null, -0.5],
+          "top_logprobs": [null, null],
+          "text_offset": [0, 5],
+          "hipengine": {
+            "omitted_token_logprobs": [
+              {
+                "index": 0,
+                "token": "alpha",
+                "token_id": 1,
+                "reason": "backend_omitted_logprob"
+              }
+            ]
+          }
+        },
+        "sampling": {"logprobs": true, "top_logprobs": 1}
+      }
+    },
+    {
+      "name": "completion_echo_logprobs_prompt_omission_reason",
+      "kind": "http",
+      "endpoint": "/v1/completions",
+      "fake_detailed_outputs": [
+        {
+          "text": " world",
+          "token_logprobs": [
+            {"token_id": 7, "token_text": " world", "logprob": -0.125}
+          ],
+          "finish_details": {"reason": "stop"}
+        }
+      ],
+      "request": {
+        "model": "fake-model",
+        "prompt": "hello",
+        "max_tokens": 1,
+        "echo": true,
+        "logprobs": 0
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "text": "hello world",
+        "finish_details": {"reason": "stop", "cache_action": "append_none"},
+        "logprobs": {
+          "tokens": ["hello", " world"],
+          "token_logprobs": [null, -0.125],
+          "top_logprobs": [null, null],
+          "text_offset": [0, 5],
+          "hipengine": {
+            "omitted_token_logprobs": [
+              {
+                "index": 0,
+                "token": "hello",
+                "token_id": null,
+                "reason": "prompt_logprob_unavailable"
+              }
+            ]
+          }
+        },
+        "sampling": {"logprobs": true, "top_logprobs": 0}
+      }
+    },
+    {
+      "name": "chat_logprobs_success",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_detailed_outputs": [
+        {
+          "text": "assistant reply",
+          "token_logprobs": [
+            {
+              "token_id": 4,
+              "token_text": "assistant",
+              "logprob": -0.1,
+              "top_logprobs": [[4, "assistant", -0.1]]
+            },
+            {"token_id": 5, "token_text": " reply", "logprob": -0.2}
+          ],
+          "finish_details": {"reason": "stop"}
+        }
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "hello"}],
+        "max_tokens": 2,
+        "logprobs": true,
+        "top_logprobs": 1
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "message_content": "assistant reply",
+        "finish_details": {"reason": "stop", "cache_action": "append_none"},
+        "logprobs": {
+          "content": [
+            {
+              "token": "assistant",
+              "logprob": -0.1,
+              "bytes": null,
+              "top_logprobs": [{"token": "assistant", "logprob": -0.1, "bytes": null}]
+            },
+            {"token": " reply", "logprob": -0.2, "bytes": null, "top_logprobs": []}
+          ],
+          "refusal": null
+        },
+        "sampling": {"logprobs": true, "top_logprobs": 1}
+      }
+    },
+    {
+      "name": "chat_logprobs_omitted_reason",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_detailed_outputs": [
+        {
+          "text": "assistant reply",
+          "token_logprobs": [
+            {"token_id": 4, "token_text": "assistant", "logprob": null},
+            {"token_id": 5, "token_text": " reply", "logprob": -0.2}
+          ],
+          "finish_details": {"reason": "stop"}
+        }
+      ],
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "hello"}],
+        "max_tokens": 2,
+        "logprobs": true
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "stop",
+        "message_content": "assistant reply",
+        "finish_details": {"reason": "stop", "cache_action": "append_none"},
+        "logprobs": {
+          "content": [
+            {"token": "assistant", "logprob": null, "bytes": null, "top_logprobs": []},
+            {"token": " reply", "logprob": -0.2, "bytes": null, "top_logprobs": []}
+          ],
+          "refusal": null,
+          "hipengine": {
+            "omitted_token_logprobs": [
+              {
+                "index": 0,
+                "token": "assistant",
+                "token_id": 4,
+                "reason": "backend_omitted_logprob"
+              }
+            ]
+          }
+        },
+        "sampling": {"logprobs": true, "top_logprobs": 0}
+      }
+    },
+    {
+      "name": "completion_logprobs_missing_backend_metadata_error",
+      "kind": "http",
+      "endpoint": "/v1/completions",
+      "fake_outputs": ["alpha"],
+      "request": {
+        "model": "fake-model",
+        "prompt": "hello",
+        "max_tokens": 1,
+        "logprobs": 1
+      },
+      "expected": {
+        "status_code": 501,
+        "error_code": "unsupported_feature",
+        "error_param": "logprobs",
+        "hipengine_error_code": "unsupported_feature"
+      }
+    },
+    {
+      "name": "engine_busy_chat_session_cap_sequence",
+      "kind": "http_sequence",
+      "endpoint": "/v1/chat/completions",
+      "server_config": {"max_chat_sessions": 1},
+      "fake_outputs": ["stored answer"],
+      "steps": [
+        {
+          "request": {
+            "model": "fake-model",
+            "messages": [{"role": "user", "content": "open first session"}],
+            "session": {"id": "sess_busy_one"}
+          },
+          "expected": {
+            "status_code": 200,
+            "finish_reason": "stop",
+            "message_content": "stored answer",
+            "finish_details": {"reason": "stop", "cache_action": "append_visible_only"}
+          }
+        },
+        {
+          "request": {
+            "model": "fake-model",
+            "messages": [{"role": "user", "content": "open second session"}],
+            "session": {"id": "sess_busy_two"}
+          },
+          "expected": {
+            "status_code": 429,
+            "error_code": "engine_busy",
+            "hipengine_error_code": "engine_busy"
+          }
+        }
+      ]
+    },
+    {
+      "name": "deadline_error_completion",
+      "kind": "http",
+      "endpoint": "/v1/completions",
+      "fake_outputs": ["late"],
+      "generate_delay_s": 0.03,
+      "request": {
+        "model": "fake-model",
+        "prompt": "slow",
+        "max_tokens": 1,
+        "timeout_ms": 1
+      },
+      "expected": {
+        "status_code": 408,
+        "error_code": "deadline_exceeded",
+        "hipengine_error_code": "deadline_exceeded",
+        "finish_details": {"reason": "deadline_exceeded", "deadline_exceeded": true}
+      }
+    },
+    {
+      "name": "backend_cancelled_completion_error",
+      "kind": "http",
+      "endpoint": "/v1/completions",
+      "fake_exception": "cancelled",
+      "request": {
+        "model": "fake-model",
+        "prompt": "cancel",
+        "max_tokens": 4
+      },
+      "expected": {
+        "status_code": 499,
+        "error_code": "cancelled",
+        "hipengine_error_code": "cancelled",
+        "finish_details": {"reason": "cancelled", "cancelled": true}
+      }
+    },
+    {
+      "name": "backend_cancelled_completion_stream_error",
+      "kind": "http",
+      "endpoint": "/v1/completions",
+      "fake_exception": "cancelled",
+      "request": {
+        "model": "fake-model",
+        "prompt": "cancel",
+        "max_tokens": 4,
+        "stream": true,
+        "stream_options": {"include_hipengine": true}
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "error",
+        "error_code": "cancelled",
+        "hipengine_error_code": "cancelled",
+        "hipengine_event": "error",
+        "finish_details": {"reason": "cancelled", "cancelled": true}
+      }
+    },
+    {
+      "name": "backend_deadline_chat_stream_error",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_exception": "deadline",
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "slow chat"}],
+        "max_tokens": 4,
+        "stream": true,
+        "timeout_ms": 5000,
+        "stream_options": {"include_hipengine": true}
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "error",
+        "error_code": "deadline_exceeded",
+        "error_param": "timeout_ms",
+        "hipengine_error_code": "deadline_exceeded",
+        "hipengine_event": "error",
+        "finish_details": {"reason": "deadline_exceeded", "deadline_exceeded": true}
+      }
+    },
+    {
+      "name": "backend_cancelled_chat_stream_error",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "fake_exception": "cancelled",
+      "request": {
+        "model": "fake-model",
+        "messages": [{"role": "user", "content": "cancel chat"}],
+        "max_tokens": 4,
+        "stream": true,
+        "stream_options": {"include_hipengine": true}
+      },
+      "expected": {
+        "status_code": 200,
+        "finish_reason": "error",
+        "error_code": "cancelled",
+        "hipengine_error_code": "cancelled",
+        "hipengine_event": "error",
+        "finish_details": {"reason": "cancelled", "cancelled": true}
+      }
+    },
+    {
+      "name": "invalid_continuation_id_chat",
+      "kind": "http",
+      "endpoint": "/v1/chat/completions",
+      "request": {
+        "model": "fake-model",
+        "continuation_id": "gen_123"
+      },
+      "expected": {
+        "status_code": 400,
+        "error_code": "invalid_continuation",
+        "error_param": "continuation_id",
+        "hipengine_error_code": "invalid_continuation"
+      }
+    },
+    {
+      "name": "continuation_expired_completion_sequence",
+      "kind": "http_sequence",
+      "endpoint": "/v1/completions",
+      "fake_detailed_outputs": [
+        {"text": "partial", "finish_details": {"reason": "length", "length_limit": 1}}
+      ],
+      "steps": [
+        {
+          "request": {
+            "model": "fake-model",
+            "prompt": "Say: ",
+            "max_tokens": 1,
+            "temperature": 0.0
+          },
+          "expected": {
+            "status_code": 200,
+            "finish_reason": "length",
+            "text": "partial",
+            "continuation_id": true,
+            "finish_details": {
+              "reason": "length",
+              "length_limit": 1,
+              "cache_action": "append_none",
+              "continuation_eligible": true,
+              "continuation_id": "$continuation_id"
+            }
+          }
+        },
+        {
+          "action": "expire_continuation",
+          "continuation_id": "$continuation_id"
+        },
+        {
+          "request": {
+            "model": "fake-model",
+            "continuation_id": "$continuation_id",
+            "max_tokens": 4
+          },
+          "expected": {
+            "status_code": 410,
+            "error_code": "continuation_expired",
+            "error_param": "continuation_id",
+            "hipengine_error_code": "continuation_expired"
+          }
+        }
+      ]
+    },
+    {
+      "name": "request_control_cancelled",
+      "kind": "request_control_cancelled",
+      "expected": {
+        "status_code": 499,
+        "error_code": "cancelled",
+        "finish_details": {"reason": "cancelled", "cancelled": true}
+      }
+    }
+  ]
+}

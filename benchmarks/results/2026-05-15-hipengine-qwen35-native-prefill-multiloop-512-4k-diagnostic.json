@@ -1,0 +1,91 @@
+{
+  "status": "diagnostic_retained",
+  "performance_claim": false,
+  "reason_not_promoted": "Active native-prefill optimization loop measurement, not yet an accepted hipEngine LLM.generate throughput row; final target and full sweep remain open.",
+  "model": "Qwen3.5-35B-A3B-PARO",
+  "quant": "w4_paro",
+  "backend": "hip_gfx1100",
+  "hardware": "AMD Radeon Pro W7900 gfx1100",
+  "date": "2026-05-16",
+  "path": "native_prefill_c1_multiloop",
+  "max_layers": 40,
+  "compiler_version_file": "/tmp/hipengine-hipcc-version.txt",
+  "change": "Fuse paired transposed W4->WMMA FP16 prefill projections for full-attention Q/K and linear-attention QKV/Z into one dual fused-W4 launch while preserving separate contiguous outputs.",
+  "source_lineage": "hipEngine local structural launch-fusion optimization of the ported nano-vllm-amd@59195ed fused W4 prefill projection family; keeps the single-projection fallback and adds a registered dual fused-W4 variant.",
+  "workloads": {
+    "512_128": {
+      "command": "python3 scripts/qwen35_paro_bench.py --token-id 9707 --prompt-length 512 --decode-tokens 128 --warmup-decode-tokens 1 --max-layers 40 --compiler-version-file /tmp/hipengine-hipcc-version.txt --require-cached-build --json /tmp/multiloop-prefill-512-128.json",
+      "prefill_tok_s_samples": [
+        2080.0181181490957,
+        2074.8594714872133,
+        2084.4843369185583,
+        2079.6644636481537,
+        2060.165053087325,
+        2041.7304336737393
+      ],
+      "prefill_tok_s_median": 2077.2619675676833,
+      "previous_retained_prefill_tok_s": 2061.7299993847314,
+      "delta_percent": 0.7533463735594381,
+      "representative_prefill_seconds": 0.25076767802238464,
+      "representative_decode_tok_s": 101.1764717099634,
+      "mad_prefill_tok_s": 4.989259966143663
+    },
+    "4096_128": {
+      "command": "python3 scripts/qwen35_paro_bench.py --token-id 9707 --prompt-length 4096 --decode-tokens 128 --warmup-decode-tokens 1 --max-layers 40 --compiler-version-file /tmp/hipengine-hipcc-version.txt --require-cached-build --json /tmp/multiloop-prefill-4k-128.json",
+      "prefill_tok_s": 659.9495183305066,
+      "previous_retained_prefill_tok_s": 659.3555736730632,
+      "delta_percent": 0.09007956877269407,
+      "prefill_seconds": 6.215692853089422,
+      "decode_tok_s": 102.14638947923955,
+      "guard_floor_prefill_tok_s": 626.38779498941,
+      "guard_passed": true,
+      "prefill_tok_s_samples": [
+        660.921816130539,
+        658.9772205304741
+      ]
+    }
+  },
+  "correctness_gate": {
+    "command": "python3 scripts/qwen35_native_prefill_fixture_gate.py --fixture fixtures/qwen35_paro/parent_512_32_seed1234.json --max-layers 40 --json /tmp/multiloop-fixture-gate.json",
+    "passed": true,
+    "finite_logits": true,
+    "generated_match": true,
+    "kl_pass": true,
+    "top1_pass": true,
+    "max_kl": 0.034058458922996276,
+    "top1_agreement": 1.0,
+    "native_owned_device_bytes": 1625645909,
+    "native_prefill_seconds": 0.24976939614862204
+  },
+  "additional_gates": [
+    {
+      "command": "git diff --check",
+      "passed": true
+    },
+    {
+      "command": "python3 -m py_compile hipengine/kernels/hip_gfx1100/quant/paro_awq_gemv.py hipengine/kernels/hip_gfx1100/quant/__init__.py hipengine/runtime/qwen35_paro.py",
+      "passed": true
+    },
+    {
+      "command": "python3 -m pytest tests/test_paro_awq_gemv_plan.py tests/test_qwen35_decode_state.py -q",
+      "passed": true,
+      "evidence": "37 passed"
+    },
+    {
+      "command": "HIPENGINE_COMPILER_VERSION_FILE=/tmp/hipengine-hipcc-version.txt python3 - <<'PY' ... build_paro_awq_gemv(load=True, require_cached=False) ... PY",
+      "passed": true,
+      "evidence": "hipengine_awq_fusedw4_prefill_dual_fp16 symbol loaded"
+    },
+    {
+      "command": "python3 scripts/smoke.py --mode paro-pack8-gemv-hip --rows 2 --hidden-size 16 --compiler-version-file /tmp/hipengine-hipcc-version.txt --require-cached-build",
+      "passed": true,
+      "evidence": "single_mismatch=0/0, dual_mismatch=0/0, fp16_single_mismatch=0/0, fp16_dual_mismatch=0/0"
+    },
+    {
+      "command": "rocprofv3 --kernel-trace -d /tmp/iter56-dual-fusedw4-trace -o trace -- python3 scripts/qwen35_paro_bench.py --token-id 9707 --prompt-length 512 --decode-tokens 0 --warmup-decode-tokens 0 --max-layers 40 --compiler-version-file /tmp/hipengine-hipcc-version.txt --require-cached-build --json /tmp/iter56-dual-fusedw4-trace.json",
+      "passed": true,
+      "evidence": "awq_fusedw4_prefill_dual_fp16_kernel<32,32> ran 40 times for 21.957 ms total / 548.9 us avg, grid_x=12288, VGPR=120, scratch=0; strided fused-W4 stayed separate at 50 calls / 14.795 ms."
+    }
+  ],
+  "worklog": "2026-05-16 \u2014 Prefill multiloop iter 56: dual fused-W4 prefill projection trial"
+}

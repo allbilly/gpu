@@ -1,0 +1,291 @@
+{
+  "main": {
+    "id": "5324373015726ba8",
+    "type": "split",
+    "children": [
+      {
+        "id": "4509724f8bf84da7",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e7a7b303c61786dc",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "e50fecc47fceb20a",
+    "type": "split",
+    "children": [
+      {
+        "id": "eee1ce37f7e285e3",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4b44bc66b81b0ac8",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "byModifiedTime",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "0445b4c3c474b762",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "tag:#blocks",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "dd26984cf0895579",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          },
+          {
+            "id": "0c3b46ad5abe31b8",
+            "type": "leaf",
+            "state": {
+              "type": "mk-path-view",
+              "state": {},
+              "icon": "lucide-ghost",
+              "title": "mk-path-view"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 414.5,
+    "collapsed": true
+  },
+  "right": {
+    "id": "43fc27400badb105",
+    "type": "split",
+    "children": [
+      {
+        "id": "1c065ec571345d62",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "141091543637c66f",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Homepage.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": false
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for Homepage"
+            }
+          },
+          {
+            "id": "c44e965ec4ffd46f",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Homepage.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": false
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from Homepage"
+            }
+          },
+          {
+            "id": "a6df045dc5c37977",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "d23d8299e353448c",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Homepage.md"
+              },
+              "icon": "lucide-list",
+              "title": "Outline of Homepage"
+            }
+          },
+          {
+            "id": "450eaf829269d505",
+            "type": "leaf",
+            "state": {
+              "type": "calendar",
+              "state": {},
+              "icon": "calendar-with-checkmark",
+              "title": "Calendar"
+            }
+          },
+          {
+            "id": "2ec51cd4ad75cd52",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          }
+        ],
+        "currentTab": 4
+      },
+      {
+        "id": "5be65b7a15dbdafe",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "058bebb3067d4924",
+            "type": "leaf",
+            "state": {
+              "type": "file-properties",
+              "state": {
+                "file": "EFFORTS/Case Study - Mathematical Modelling Presentation Notes Section 7.md"
+              },
+              "icon": "lucide-info",
+              "title": "File properties for Case Study - Mathematical Modelling Presentation Notes Section 7"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 471.5,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "bases:Create new base": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": true,
+      "command-palette:Open command palette": true,
+      "switcher:Open quick switcher": false,
+      "workspaces:Manage workspace layouts": false,
+      "canvas:Create new canvas": false,
+      "graph:Open graph view": false,
+      "obsidian-kanban:Create new board": false,
+      "obsidian-projects:Open projects": false,
+      "templater-obsidian:Templater": false,
+      "obsidian-statusbar-pomo:Start pomodoro": false,
+      "obsidian-git:Open Git source control": false,
+      "homepage:Open homepage": false,
+      "pdf-plus:PDF++: Toggle auto-copy": false,
+      "pdf-plus:PDF++: Toggle auto-focus": false,
+      "pdf-plus:PDF++: Toggle auto-paste": false,
+      "obsidian-custom-frames:Open Google Calendar": false,
+      "obsidian-excalidraw-plugin:New drawing": false,
+      "digitalgarden:Digital Garden Publication Center": false,
+      "table-editor-obsidian:Advanced Tables Toolbar": false,
+      "periodic-notes:Open today": false
+    }
+  },
+  "active": "e7a7b303c61786dc",
+  "lastOpenFiles": [
+    "EFFORTS/Setting up QEMU for OrangePi Kernel Development.md",
+    "EFFORTS/Writing a Operating System.md",
+    "EFFORTS/RISC-V.md",
+    "EFFORTS/Efforts.md",
+    "Homepage.md",
+    "ATLAS/3-05-2026 - Intro.md",
+    "ATLAS/Shakti Sir Meeting Notes.md",
+    "ATLAS/Math Modellin.md",
+    "ATLAS/Atlas.md",
+    "Buffer.md",
+    "EFFORTS/PI Day Presentation.md",
+    "EFFORTS/SSSIHL.md",
+    "Extras/ATTACHMENTS/&lt;system&gt;_You are an expert computer architec.md",
+    "EFFORTS/Case Study Mathematical Modelling.md",
+    "EFFORTS/Case Study - Mathematical Modelling Presentation Notes Section 6.md",
+    "EFFORTS/Case Study - Mathematical Modelling Presentation Notes Section 7.md",
+    "EFFORTS/Case Study - Mathematical Modelling Presentation Notes Section 5.md",
+    "CALENDER/2026-03-10.md",
+    "EFFORTS/Case Study - Mathematical Modelling Presentation Notes.md",
+    "Prabin's KB ~/Prabins KB ~.md",
+    "EFFORTS/Rv2 Board CPU Details.md",
+    "EFFORTS/RV2.md",
+    "ATLAS/07-03-202 -- UOS.md",
+    "ATLAS/14 - 02 - 2026 -- SOS-V.md",
+    "ATLAS/20 -02 - 2026 -- CSRs.md",
+    "Excalidraw/Drawing 2026-03-06 14.26.25.excalidraw.md",
+    "Excalidraw/address_translation.excalidraw",
+    "Kanban Boards",
+    "Extras/ATTACHMENTS/image-97.png",
+    "Extras/ATTACHMENTS/image-95.png",
+    "Extras/ATTACHMENTS/9ef04c7f-1ab9-4833-a3ef-6d0b5b8ab48f-2.png",
+    "Extras/ATTACHMENTS/9ef04c7f-1ab9-4833-a3ef-6d0b5b8ab48f-1.png",
+    "Extras/ATTACHMENTS/ChatGPT Image Mar 2, 2026, 11_27_38 AM.png",
+    "Extras/ATTACHMENTS/9ef04c7f-1ab9-4833-a3ef-6d0b5b8ab48f.png",
+    "Excalidraw/Scripts/Downloaded/Auto Layout.svg",
+    "Extras/ATTACHMENTS/image-108.png",
+    "Extras/ATTACHMENTS/image-107.png",
+    "Extras/ATTACHMENTS/image-106.png",
+    "Extras/ATTACHMENTS/combined_RTX4090_no_skip_first2rows_v3.pdf",
+    "Extras/ATTACHMENTS/Sample CSV.pdf",
+    "Prabin's KB ~",
+    "Excalidraw/Scripts/Downloaded",
+    "Excalidraw/Scripts",
+    "Excalidraw",
+    "Untitled",
+    "Bibliography/References.bib",
+    "EFFORTS/Untitled.canvas",
+    "NotesByPrabin/EFFORTS/Binary Search.canvas",
+    "EFFORTS/Binary Search.canvas",
+    "!HOME.canvas",
+    "Untitled.canvas",
+    "ATLAS/SubjectNotes/C PP/Untitled.canvas",
+    "EFFORTS/CS-COD Assignments/CS-COD Assignments.canvas",
+    "EFFORTS/!ABAW/!ABAW.canvas",
+    "ATLAS/SubjectNotes/C PP/C PP.canvas",
+    "EFFORTS/EFFORTS.canvas"
+  ]
+}

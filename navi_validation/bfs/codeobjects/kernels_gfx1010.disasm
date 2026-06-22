@@ -1,0 +1,340 @@
+	.text
+	.hsa_code_object_version 2,1
+	.hsa_code_object_isa 10,1,0,"AMD","AMDGPU"
+	.protected	BFS_kernel_warp         ; -- Begin function BFS_kernel_warp
+	.globl	BFS_kernel_warp
+	.p2align	8
+	.type	BFS_kernel_warp,@function
+	.amdgpu_hsa_kernel BFS_kernel_warp
+BFS_kernel_warp:                        ; @BFS_kernel_warp
+BFS_kernel_warp$local:
+	.amd_kernel_code_t
+		amd_code_version_major = 1
+		amd_code_version_minor = 2
+		amd_machine_kind = 1
+		amd_machine_version_major = 10
+		amd_machine_version_minor = 1
+		amd_machine_version_stepping = 0
+		kernel_code_entry_byte_offset = 256
+		kernel_code_prefetch_byte_size = 0
+		granulated_workitem_vgpr_count = 1
+		granulated_wavefront_sgpr_count = 4
+		priority = 0
+		float_mode = 240
+		priv = 0
+		enable_dx10_clamp = 1
+		debug_mode = 0
+		enable_ieee_mode = 1
+		enable_wgp_mode = 1
+		enable_mem_ordered = 1
+		enable_fwd_progress = 0
+		enable_sgpr_private_segment_wave_byte_offset = 0
+		user_sgpr_count = 8
+		enable_trap_handler = 0
+		enable_sgpr_workgroup_id_x = 1
+		enable_sgpr_workgroup_id_y = 0
+		enable_sgpr_workgroup_id_z = 0
+		enable_sgpr_workgroup_info = 0
+		enable_vgpr_workitem_id = 0
+		enable_exception_msb = 0
+		granulated_lds_size = 0
+		enable_exception = 0
+		enable_sgpr_private_segment_buffer = 1
+		enable_sgpr_dispatch_ptr = 1
+		enable_sgpr_queue_ptr = 0
+		enable_sgpr_kernarg_segment_ptr = 1
+		enable_sgpr_dispatch_id = 0
+		enable_sgpr_flat_scratch_init = 0
+		enable_sgpr_private_segment_size = 0
+		enable_sgpr_grid_workgroup_count_x = 0
+		enable_sgpr_grid_workgroup_count_y = 0
+		enable_sgpr_grid_workgroup_count_z = 0
+		enable_wavefront_size32 = 1
+		enable_ordered_append_gds = 0
+		private_element_size = 1
+		is_ptr64 = 1
+		is_dynamic_callstack = 0
+		is_debug_enabled = 0
+		is_xnack_enabled = 0
+		workitem_private_segment_byte_size = 0
+		workgroup_group_segment_byte_size = 0
+		gds_segment_byte_size = 0
+		kernarg_segment_byte_size = 104
+		workgroup_fbarrier_count = 0
+		wavefront_sgpr_count = 34
+		workitem_vgpr_count = 15
+		reserved_vgpr_first = 0
+		reserved_vgpr_count = 0
+		reserved_sgpr_first = 0
+		reserved_sgpr_count = 0
+		debug_wavefront_private_segment_offset_sgpr = 0
+		debug_private_segment_buffer_sgpr = 0
+		kernarg_segment_alignment = 4
+		group_segment_alignment = 4
+		private_segment_alignment = 4
+		wavefront_size = 5
+		call_convention = -1
+		runtime_loader_kernel_symbol = 0
+	.end_amd_kernel_code_t
+; %bb.0:
+	s_clause 0x1
+	s_load_dwordx4 s[0:3], s[6:7], 0x18
+	s_load_dword s9, s[6:7], 0x30
+	s_load_dword s4, s[4:5], 0x4
+                                        ; implicit-def: $vcc_hi
+	s_waitcnt lgkmcnt(0)
+	s_ashr_i32 s10, s0, 31
+	s_add_i32 s11, s0, s10
+	s_and_b32 s4, s4, 0xffff
+	s_xor_b32 s11, s11, s10
+	s_mul_i32 s8, s8, s4
+	v_cvt_f32_u32_e32 v1, s11
+	s_sub_i32 s5, 0, s11
+	v_rcp_iflag_f32_e32 v1, v1
+	v_mul_f32_e32 v1, 0x4f7ffffe, v1
+	v_cvt_u32_f32_e32 v2, v1
+	v_add3_u32 v1, s9, s8, v0
+	v_mul_lo_u32 v3, s5, v2
+	v_ashrrev_i32_e32 v7, 31, v1
+	v_add_nc_u32_e32 v4, v1, v7
+	v_xor_b32_e32 v0, s10, v7
+	v_mul_hi_u32 v3, v2, v3
+	v_xor_b32_e32 v4, v4, v7
+	v_add_nc_u32_e32 v2, v2, v3
+	v_mul_hi_u32 v2, v4, v2
+	v_mul_lo_u32 v3, v2, s11
+	v_sub_nc_u32_e32 v3, v4, v3
+	v_add_nc_u32_e32 v4, 1, v2
+	v_cmp_le_u32_e32 vcc_lo, s11, v3
+	v_subrev_nc_u32_e32 v5, s11, v3
+	v_cndmask_b32_e32 v2, v2, v4, vcc_lo
+	v_cndmask_b32_e32 v3, v3, v5, vcc_lo
+	v_add_nc_u32_e32 v4, 1, v2
+	v_cmp_le_u32_e32 vcc_lo, s11, v3
+	v_cndmask_b32_e32 v2, v2, v4, vcc_lo
+	v_xor_b32_e32 v2, v2, v0
+	v_sub_nc_u32_e32 v3, v2, v0
+	v_mul_lo_u32 v0, v3, s1
+	v_sub_nc_u32_e32 v2, s2, v0
+	v_add_nc_u32_e32 v4, s1, v0
+	s_add_i32 s1, s1, 1
+	v_add_nc_u32_e32 v2, 1, v2
+	v_cmp_gt_u32_e32 vcc_lo, s2, v4
+	v_max_i32_e32 v2, 0, v2
+	v_cndmask_b32_e64 v2, v2, s1, vcc_lo
+	s_mov_b32 s1, 0
+	v_add3_u32 v2, v0, v2, -1
+	v_cmp_lt_i32_e32 vcc_lo, v0, v2
+	s_and_saveexec_b32 s2, vcc_lo
+	s_cbranch_execz BB0_9
+; %bb.1:
+	s_clause 0x2
+	s_load_dwordx4 s[28:31], s[6:7], 0x0
+	s_load_dwordx4 s[12:15], s[6:7], 0x10
+	s_load_dwordx2 s[4:5], s[6:7], 0x28
+	v_mul_lo_u32 v3, v3, s0
+	s_add_i32 s2, s3, 1
+	v_sub_nc_u32_e32 v3, v1, v3
+	s_branch BB0_3
+BB0_2:                                  ; %.loopexit
+                                        ;   in Loop: Header=BB0_3 Depth=1
+	s_or_b32 exec_lo, exec_lo, s6
+	v_add_nc_u32_e32 v0, 1, v0
+	v_cmp_eq_u32_e32 vcc_lo, v0, v2
+	s_or_b32 s1, vcc_lo, s1
+	s_andn2_b32 exec_lo, exec_lo, s1
+	s_cbranch_execz BB0_9
+BB0_3:                                  ; =>This Loop Header: Depth=1
+                                        ;     Child Loop BB0_7 Depth 2
+	v_ashrrev_i32_e32 v1, 31, v0
+	v_lshlrev_b64 v[4:5], 2, v[0:1]
+	s_waitcnt lgkmcnt(0)
+	v_add_co_u32_e64 v4, vcc_lo, s28, v4
+	v_add_co_ci_u32_e32 v5, vcc_lo, s29, v5, vcc_lo
+	global_load_dword v4, v[4:5], off
+	s_waitcnt vmcnt(0)
+	v_cmp_eq_u32_e32 vcc_lo, s3, v4
+	s_and_saveexec_b32 s6, vcc_lo
+	s_cbranch_execz BB0_2
+; %bb.4:                                ;   in Loop: Header=BB0_3 Depth=1
+	v_lshlrev_b64 v[4:5], 2, v[0:1]
+	v_add_co_u32_e64 v4, vcc_lo, s30, v4
+	v_add_co_ci_u32_e32 v5, vcc_lo, s31, v5, vcc_lo
+	global_load_dwordx2 v[4:5], v[4:5], off
+	s_waitcnt vmcnt(0)
+	v_sub_nc_u32_e32 v14, v5, v4
+	v_cmp_lt_u32_e32 vcc_lo, v3, v14
+	s_and_b32 exec_lo, exec_lo, vcc_lo
+	s_cbranch_execz BB0_2
+; %bb.5:                                ; %.preheader.preheader
+                                        ;   in Loop: Header=BB0_3 Depth=1
+	v_mov_b32_e32 v5, v3
+	s_mov_b32 s7, 0
+	s_branch BB0_7
+BB0_6:                                  ;   in Loop: Header=BB0_7 Depth=2
+	s_waitcnt_depctr 0xffe3
+	s_or_b32 exec_lo, exec_lo, s14
+	v_add_nc_u32_e32 v5, s0, v5
+	v_cmp_ge_u32_e32 vcc_lo, v5, v14
+	s_or_b32 s7, vcc_lo, s7
+	s_andn2_b32 exec_lo, exec_lo, s7
+	s_cbranch_execz BB0_2
+BB0_7:                                  ; %.preheader
+                                        ;   Parent Loop BB0_3 Depth=1
+                                        ; =>  This Inner Loop Header: Depth=2
+	v_add_nc_u32_e32 v6, v4, v5
+	v_mov_b32_e32 v7, 0
+	v_lshlrev_b64 v[6:7], 2, v[6:7]
+	v_add_co_u32_e64 v6, vcc_lo, s12, v6
+	v_add_co_ci_u32_e32 v7, vcc_lo, s13, v7, vcc_lo
+	global_load_dword v6, v[6:7], off
+	s_waitcnt vmcnt(0)
+	v_ashrrev_i32_e32 v7, 31, v6
+	v_lshlrev_b64 v[6:7], 2, v[6:7]
+	v_add_co_u32_e64 v6, vcc_lo, s28, v6
+	v_add_co_ci_u32_e32 v7, vcc_lo, s29, v7, vcc_lo
+	global_load_dword v8, v[6:7], off
+	s_waitcnt vmcnt(0)
+	v_cmp_eq_u32_e32 vcc_lo, -1, v8
+	s_and_saveexec_b32 s14, vcc_lo
+	s_cbranch_execz BB0_6
+; %bb.8:                                ;   in Loop: Header=BB0_7 Depth=2
+	v_mov_b32_e32 v1, s2
+	v_mov_b32_e32 v9, s5
+	v_mov_b32_e32 v11, 1
+	v_mov_b32_e32 v8, s4
+	global_store_dword v[6:7], v1, off
+	global_store_dword v[8:9], v11, off
+	s_branch BB0_6
+BB0_9:                                  ; %Flow30
+	s_endpgm
+.Lfunc_end0:
+	.size	BFS_kernel_warp, .Lfunc_end0-BFS_kernel_warp
+                                        ; -- End function
+	.section	.AMDGPU.csdata
+; Kernel info:
+; codeLenInByte = 588
+; NumSgprs: 34
+; NumVgprs: 15
+; ScratchSize: 0
+; MemoryBound: 0
+; FloatMode: 240
+; IeeeMode: 1
+; LDSByteSize: 0 bytes/workgroup (compile time only)
+; SGPRBlocks: 4
+; VGPRBlocks: 1
+; NumSGPRsForWavesPerEU: 34
+; NumVGPRsForWavesPerEU: 15
+; Occupancy: 20
+; WaveLimiterHint : 1
+; COMPUTE_PGM_RSRC2:USER_SGPR: 8
+; COMPUTE_PGM_RSRC2:TRAP_HANDLER: 0
+; COMPUTE_PGM_RSRC2:TGID_X_EN: 1
+; COMPUTE_PGM_RSRC2:TGID_Y_EN: 0
+; COMPUTE_PGM_RSRC2:TGID_Z_EN: 0
+; COMPUTE_PGM_RSRC2:TIDIG_COMP_CNT: 0
+	.text
+	.p2alignl 6, 3214868480
+	.fill 48, 4, 3214868480
+	.ident	"clang version 12.0.0 (/src/external/llvm-project/clang dac2bfceaa8d4a90257dc8a6d58f268e172ce00e)"
+	.section	".note.GNU-stack"
+	.addrsig
+	.amd_amdgpu_isa "amdgcn-amd-amdhsa--gfx1010"
+	.amd_amdgpu_hsa_metadata
+---
+Version:         [ 1, 0 ]
+Kernels:
+  - Name:            BFS_kernel_warp
+    SymbolName:      'BFS_kernel_warp@kd'
+    Language:        OpenCL C
+    LanguageVersion: [ 1, 2 ]
+    Args:
+      - Name:            levels
+        TypeName:        'uint*'
+        Size:            8
+        Align:           8
+        ValueKind:       GlobalBuffer
+        AddrSpaceQual:   Global
+        AccQual:         Default
+      - Name:            edgeArray
+        TypeName:        'uint*'
+        Size:            8
+        Align:           8
+        ValueKind:       GlobalBuffer
+        AddrSpaceQual:   Global
+        AccQual:         Default
+      - Name:            edgeArrayAux
+        TypeName:        'uint*'
+        Size:            8
+        Align:           8
+        ValueKind:       GlobalBuffer
+        AddrSpaceQual:   Global
+        AccQual:         Default
+      - Name:            W_SZ
+        TypeName:        int
+        Size:            4
+        Align:           4
+        ValueKind:       ByValue
+        AccQual:         Default
+      - Name:            CHUNK_SZ
+        TypeName:        int
+        Size:            4
+        Align:           4
+        ValueKind:       ByValue
+        AccQual:         Default
+      - Name:            numVertices
+        TypeName:        uint
+        Size:            4
+        Align:           4
+        ValueKind:       ByValue
+        AccQual:         Default
+      - Name:            curr
+        TypeName:        int
+        Size:            4
+        Align:           4
+        ValueKind:       ByValue
+        AccQual:         Default
+      - Name:            flag
+        TypeName:        'int*'
+        Size:            8
+        Align:           8
+        ValueKind:       GlobalBuffer
+        AddrSpaceQual:   Global
+        AccQual:         Default
+      - Size:            8
+        Align:           8
+        ValueKind:       HiddenGlobalOffsetX
+      - Size:            8
+        Align:           8
+        ValueKind:       HiddenGlobalOffsetY
+      - Size:            8
+        Align:           8
+        ValueKind:       HiddenGlobalOffsetZ
+      - Size:            8
+        Align:           8
+        ValueKind:       HiddenNone
+        AddrSpaceQual:   Global
+      - Size:            8
+        Align:           8
+        ValueKind:       HiddenNone
+        AddrSpaceQual:   Global
+      - Size:            8
+        Align:           8
+        ValueKind:       HiddenNone
+        AddrSpaceQual:   Global
+      - Size:            8
+        Align:           8
+        ValueKind:       HiddenMultiGridSyncArg
+        AddrSpaceQual:   Global
+    CodeProps:
+      KernargSegmentSize: 104
+      GroupSegmentFixedSize: 0
+      PrivateSegmentFixedSize: 0
+      KernargSegmentAlign: 8
+      WavefrontSize:   32
+      NumSGPRs:        34
+      NumVGPRs:        15
+      MaxFlatWorkGroupSize: 256
+...
+
+	.end_amd_amdgpu_hsa_metadata

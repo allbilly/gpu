@@ -282,7 +282,7 @@ waitress==3.0.0
     # via webtest
 wcwidth==0.2.13
     # via prompt-toolkit
-webob==1.8.7
+webob==1.8.11
     # via webtest
 webtest==3.0.0
     # via autodoc
